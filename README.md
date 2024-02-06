@@ -6,7 +6,7 @@
 ## Install
 
 ``` sh
-pip install DGRec
+pip install git+https://github.com/dbikard/DGRec.git
 ```
 
 ## How to use
