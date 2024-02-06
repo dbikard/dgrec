@@ -5,4 +5,12 @@ d = { 'settings': { 'branch': 'main',
                 'doc_host': 'https://dbikard.github.io',
                 'git_url': 'https://github.com/dbikard/DGRec',
                 'lib_path': 'DGRec'},
-  'syms': {'DGRec.core': {'DGRec.core.foo': ('core.html#foo', 'DGRec/core.py')}}}
+  'syms': { 'DGRec.core': { 'DGRec.core.align2mut': ('core.html#align2mut', 'DGRec/core.py'),
+                            'DGRec.core.correct_UMI_genotypes': ('core.html#correct_umi_genotypes', 'DGRec/core.py'),
+                            'DGRec.core.genotype_UMI_counter': ('core.html#genotype_umi_counter', 'DGRec/core.py'),
+                            'DGRec.core.get_UMI_genotype': ('core.html#get_umi_genotype', 'DGRec/core.py'),
+                            'DGRec.core.get_genotypes': ('core.html#get_genotypes', 'DGRec/core.py'),
+                            'DGRec.core.get_mutations': ('core.html#get_mutations', 'DGRec/core.py'),
+                            'DGRec.core.mut_rix': ('core.html#mut_rix', 'DGRec/core.py'),
+                            'DGRec.core.mut_to_str': ('core.html#mut_to_str', 'DGRec/core.py')},
+            'DGRec.utils': {'DGRec.utils.downsample_fastq_gz': ('utils.html#downsample_fastq_gz', 'DGRec/utils.py')}}}
