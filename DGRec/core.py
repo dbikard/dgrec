@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['align2mut', 'mut_rix', 'get_mutations', 'mut_to_str', 'get_UMI_genotype', 'correct_UMI_genotypes',
-           'genotype_UMI_counter', 'get_genotypes']
+           'genotype_UMI_counter', 'get_genotypes', 'DGRec_genotypes']
 
 # %% ../nbs/00_core.ipynb 4
 from fastcore.basics import *
@@ -13,6 +13,7 @@ import os
 from collections import defaultdict, Counter
 import numpy as np
 import itertools
+import click
 
 # %% ../nbs/00_core.ipynb 6
 def align2mut(align):
@@ -60,7 +61,7 @@ def mut_to_str(mutations: list):
 def get_UMI_genotype(fastq_path: str, #path to the input fastq file
                      ref_seq: str, #sequence of the reference amplicon
                      umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
-                     filter_threshold: int = 30, #threshold value used to filter out reads of poor average quality
+                     quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                      ignore_pos: list = [], #list of positions that are ignored in the genotype
                      ) -> dict:
     
@@ -77,7 +78,7 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
             n_reads+=1
             meanScore=np.mean(r.letter_annotations['phred_quality'])
 
-            if meanScore>filter_threshold:
+            if meanScore>quality_threshold:
                 n_reads_pass_Qfilter+=1
                 umi=str(r.seq[:umi_size])
                 mutations=get_mutations(ref_seq,r.seq[umi_size:])
@@ -123,14 +124,37 @@ def genotype_UMI_counter(UMI_gen_dict):
 def get_genotypes(fastq_path: str, #path to the input fastq file
                     ref_seq: str, #sequence of the reference amplicon
                     umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
-                    filter_threshold: int = 30, #threshold value used to filter out reads of poor average quality
+                    quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                     ignore_pos: list = [], #list of positions that are ignored in the genotype
                     reads_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error corrects for UMIs with multiple reads.
                     ):
     """Putting things together in a single wrapper function that takes the fastq as input and returns the list of genotypes."""
-    UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, filter_threshold, ignore_pos)
+    UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, quality_threshold, ignore_pos)
     UMI_gen_dict=correct_UMI_genotypes(UMI_dict, reads_thr)
     gen_list = genotype_UMI_counter(UMI_gen_dict)
     print("Number of genotypes:", len(gen_list))
     return gen_list
     
+
+# %% ../nbs/00_core.ipynb 22
+#Commande line function
+@click.command()
+@click.argument('fastq', type=click.Path(exists=True))
+@click.argument('ref', type=click.Path(exists=True))
+@click.option('--umi_size', '-u', default=10, help="Number of nucleotides at the begining of the read that will be used as the UMI")
+@click.option('--quality_threshold', '-q', default=10, help="threshold value used to filter out reads of poor average quality")
+@click.option('--ignore_pos', '-i', default=[], multiple=True, help="list of positions that are ignored in the genotype, e.g. [0,1,149,150]")
+@click.option('--reads_thr', '-r', default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error corrects for UMIs with multiple reads")
+@click.option('--output', '-o', default="genotypes.csv", help="output file path")
+def DGRec_genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_thr, output):
+    ref=next(SeqIO.parse(ref,"fasta"))
+    ref_seq=str(ref.seq)
+    gen_list = get_genotypes(fastq, ref_seq, 
+                             umi_size=umi_size, 
+                             quality_threshold=quality_threshold, 
+                             ignore_pos=ignore_pos,
+                             reads_thr=reads_thr)
+    
+    with open(output,"w") as handle:
+            for g,n in gen_list:
+                handle.write(f"{g}\t{n}\n")
