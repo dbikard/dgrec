@@ -11,6 +11,14 @@ pip install git+https://github.com/dbikard/DGRec.git
 
 ## How to use
 
+### Command line interface
+
+``` sh
+DGRec_genotypes fastq_path reference_path -o genotypes.csv
+```
+
+### In python
+
 ``` python
 import DGRec
 ```
