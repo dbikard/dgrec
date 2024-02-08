@@ -1,5 +1,6 @@
 from pkg_resources import parse_version
 from configparser import ConfigParser
+from setuptools import Extension
 import setuptools, shlex
 assert parse_version(setuptools.__version__)>=parse_version('36.2')
 
@@ -30,6 +31,8 @@ min_python = cfg['min_python']
 lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
 dev_requirements = (cfg.get('dev_requirements') or '').split()
 
+EXTENSIONS=[Extension("dgrec.cpairwise2", ["dgrec/cpairwise2module.c"])]
+
 setuptools.setup(
     name = cfg['lib_name'],
     license = lic[0],
@@ -40,6 +43,7 @@ setuptools.setup(
     ] + ['Programming Language :: Python :: '+o for o in py_versions[py_versions.index(min_python):]] + (['License :: ' + lic[1] ] if lic[1] else []),
     url = cfg['git_url'],
     packages = setuptools.find_packages(),
+    ext_modules=EXTENSIONS,
     include_package_data = True,
     install_requires = requirements,
     extras_require={ 'dev': dev_requirements },
