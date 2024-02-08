@@ -12,7 +12,9 @@ d = { 'settings': { 'branch': 'main',
                             'DGRec.core.get_UMI_genotype': ('core.html#get_umi_genotype', 'DGRec/core.py'),
                             'DGRec.core.get_genotypes': ('core.html#get_genotypes', 'DGRec/core.py'),
                             'DGRec.core.get_mutations': ('core.html#get_mutations', 'DGRec/core.py'),
-                            'DGRec.core.mut_rix': ('core.html#mut_rix', 'DGRec/core.py'),
-                            'DGRec.core.mut_to_str': ('core.html#mut_to_str', 'DGRec/core.py')},
+                            'DGRec.core.mut_rix': ('core.html#mut_rix', 'DGRec/core.py')},
             'DGRec.plotting': {'DGRec.plotting.plot_mutations': ('plotting.html#plot_mutations', 'DGRec/plotting.py')},
-            'DGRec.utils': {'DGRec.utils.downsample_fastq_gz': ('utils.html#downsample_fastq_gz', 'DGRec/utils.py')}}}
+            'DGRec.utils': { 'DGRec.utils.downsample_fastq_gz': ('utils.html#downsample_fastq_gz', 'DGRec/utils.py'),
+                             'DGRec.utils.mut_to_str': ('utils.html#mut_to_str', 'DGRec/utils.py'),
+                             'DGRec.utils.parse_genotypes': ('utils.html#parse_genotypes', 'DGRec/utils.py'),
+                             'DGRec.utils.str_to_mut': ('utils.html#str_to_mut', 'DGRec/utils.py')}}}

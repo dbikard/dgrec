@@ -12,8 +12,9 @@ import csv
 import numpy as np
 from Bio import SeqIO
 from typing import Union
+from dgrec.utils import str_to_mut
 
-# %% ../nbs/01_plotting.ipynb 7
+# %% ../nbs/01_plotting.ipynb 8
 def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple: (string representation of the genotype, number of molecules)
                    ref_seq: str, #reference sequence
                    sample_name: str = None,  #sample name
@@ -29,7 +30,7 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
 
     symbols=["A","T","G","C","del","ins","N"]
     mut_arrays=dict([(s,np.zeros(L)) for s in symbols])
-    for gen, n in gen_list[1:]:
+    for gen, n in gen_list[1:]: #assumes the genotypes with the most molecules is the WT sequence and skips it
         g=gen.split(',')
         for mut in g:
             if mut:

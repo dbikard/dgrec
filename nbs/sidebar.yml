@@ -2,5 +2,11 @@ website:
   sidebar:
     contents:
       - index.ipynb
-      - 00_core.ipynb
-      - 01_utils.ipynb
+      - section: API
+        contents:
+          - API/00_core.ipynb
+          - API/01_plotting.ipynb
+          - API/02_utils.ipynb
+      - section: DGRec data analysis
+        contents:
+          - DGRec data analysis/00_mutation_distribution.ipynb
