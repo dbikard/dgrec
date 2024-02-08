@@ -15,7 +15,7 @@ import numpy as np
 import itertools
 import click
 
-# %% ../nbs/00_core.ipynb 6
+# %% ../nbs/00_core.ipynb 7
 def align2mut(align):
     """Converts a sequence alignment result from Bio.pairwise2.Align.globalms into a genotype string.
     Positions are those of the alignment."""
@@ -26,7 +26,7 @@ def align2mut(align):
             res.append(mut)
     return res
 
-# %% ../nbs/00_core.ipynb 8
+# %% ../nbs/00_core.ipynb 9
 def mut_rix(mutations):
     """Reindexes the positions of the mutations to go from 
     their position in the sequence alignment to their position in the original sequence."""
@@ -40,7 +40,7 @@ def mut_rix(mutations):
             
     return res_rix
 
-# %% ../nbs/00_core.ipynb 10
+# %% ../nbs/00_core.ipynb 12
 def get_mutations(seqA,seqB):
     """Aligns two sequences and returns a genotype string.
     The string is a comma separated list of mutations.
@@ -50,14 +50,14 @@ def get_mutations(seqA,seqB):
     mutations=mut_rix(mutations)
     return mutations
 
-# %% ../nbs/00_core.ipynb 12
+# %% ../nbs/00_core.ipynb 14
 def mut_to_str(mutations: list):
     """Converts list of mutations to a comma separated string"""
     mut_str_list=[''.join(map(str,mut)) for mut in mutations]
     mut_str=','.join(mut_str_list)
     return mut_str
 
-# %% ../nbs/00_core.ipynb 14
+# %% ../nbs/00_core.ipynb 16
 def get_UMI_genotype(fastq_path: str, #path to the input fastq file
                      ref_seq: str, #sequence of the reference amplicon
                      umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
@@ -94,7 +94,7 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
     print(log)
     return UMI_dict
 
-# %% ../nbs/00_core.ipynb 16
+# %% ../nbs/00_core.ipynb 18
 def correct_UMI_genotypes(UMI_dict: dict, #the output of the get_UMI_genotype function
                           reads_thr=2 #only keep UMIs for which we have more than reads_thr reads
                           ) -> dict:
@@ -111,7 +111,7 @@ def correct_UMI_genotypes(UMI_dict: dict, #the output of the get_UMI_genotype fu
 
     return UMI_gen_dict
 
-# %% ../nbs/00_core.ipynb 18
+# %% ../nbs/00_core.ipynb 20
 def genotype_UMI_counter(UMI_gen_dict):
     """Takes as input the output of correct_UMI_genotypes() and 
     returns a list of genotypes sorted by the number of UMIs detected corresponding that each genotype."""
@@ -120,7 +120,7 @@ def genotype_UMI_counter(UMI_gen_dict):
     return gen_sorted_list
 
 
-# %% ../nbs/00_core.ipynb 20
+# %% ../nbs/00_core.ipynb 22
 def get_genotypes(fastq_path: str, #path to the input fastq file
                     ref_seq: str, #sequence of the reference amplicon
                     umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
@@ -136,7 +136,7 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
     return gen_list
     
 
-# %% ../nbs/00_core.ipynb 22
+# %% ../nbs/00_core.ipynb 24
 #Commande line interface
 @click.command()
 @click.argument('fastq', type=click.Path(exists=True))

@@ -8,7 +8,7 @@ import gzip
 import itertools
 import os
 
-# %% ../nbs/02_utils.ipynb 4
+# %% ../nbs/02_utils.ipynb 5
 def downsample_fastq_gz(input_file, output_file, num_reads=10000):
     """Downsamples a compressed FASTQ file to the specified number of reads.
 

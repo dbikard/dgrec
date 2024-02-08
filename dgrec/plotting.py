@@ -13,7 +13,7 @@ import numpy as np
 from Bio import SeqIO
 from typing import Union
 
-# %% ../nbs/01_plotting.ipynb 7
+# %% ../nbs/01_plotting.ipynb 8
 def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple: (string representation of the genotype, number of molecules)
                    ref_seq: str, #reference sequence
                    sample_name: str = None,  #sample name

@@ -17,30 +17,24 @@ pip install git+https://github.com/dbikard/dgrec.git
 dgrec_genotypes fastq_path reference_path -o genotypes.csv
 ```
 
-``` python
-!dgrec_genotypes --help
+``` sh
+Usage: dgrec_genotypes [OPTIONS] FASTQ REF
+
+Options:
+  -u, --umi_size INTEGER          Number of nucleotides at the begining of the
+                                  read that will be used as the UMI
+  -q, --quality_threshold INTEGER
+                                  threshold value used to filter out reads of
+                                  poor average quality
+  -i, --ignore_pos TEXT           list of positions that are ignored in the
+                                  genotype, e.g. [0,1,149,150]
+  -r, --reads_thr INTEGER         minimum number of reads required to take a
+                                  UMI into account. Using a number >2 enables
+                                  to perform error corrects for UMIs with
+                                  multiple reads
+  -o, --output TEXT               output file path
+  --help                          Show this message and exit.
 ```
-
-    /home/dbikard/anaconda3/envs/DGRec/lib/python3.11/site-packages/Bio/__init__.py:138: BiopythonWarning: You may be importing Biopython from inside the source tree. This is bad practice and might lead to downstream issues. In particular, you might encounter ImportErrors due to missing compiled C extensions. We recommend that you try running your code from outside the source tree. If you are outside the source tree then you have a setup.py file in an unexpected directory: /home/dbikard/anaconda3/envs/DGRec/lib/python3.11/site-packages
-      warnings.warn(
-    /home/dbikard/anaconda3/envs/DGRec/lib/python3.11/site-packages/Bio/pairwise2.py:278: BiopythonDeprecationWarning: Bio.pairwise2 has been deprecated, and we intend to remove it in a future release of Biopython. As an alternative, please consider using Bio.Align.PairwiseAligner as a replacement, and contact the Biopython developers if you still need the Bio.pairwise2 module.
-      warnings.warn(
-    Usage: dgrec_genotypes [OPTIONS] FASTQ REF
-
-    Options:
-      -u, --umi_size INTEGER          Number of nucleotides at the begining of the
-                                      read that will be used as the UMI
-      -q, --quality_threshold INTEGER
-                                      threshold value used to filter out reads of
-                                      poor average quality
-      -i, --ignore_pos TEXT           list of positions that are ignored in the
-                                      genotype, e.g. [0,1,149,150]
-      -r, --reads_thr INTEGER         minimum number of reads required to take a
-                                      UMI into account. Using a number >2 enables
-                                      to perform error corrects for UMIs with
-                                      multiple reads
-      -o, --output TEXT               output file path
-      --help                          Show this message and exit.
 
 ### In python
 
@@ -100,4 +94,4 @@ for g in gen_list[:20]:
 fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name="sacB", TR_range=[50,119])
 ```
 
-![](index_files/figure-commonmark/cell-5-output-1.png)
+![](index_files/figure-commonmark/cell-4-output-1.png)

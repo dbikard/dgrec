@@ -120,7 +120,7 @@ def genotype_UMI_counter(UMI_gen_dict):
     return gen_sorted_list
 
 
-# %% ../nbs/00_core.ipynb 21
+# %% ../nbs/00_core.ipynb 20
 def get_genotypes(fastq_path: str, #path to the input fastq file
                     ref_seq: str, #sequence of the reference amplicon
                     umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
@@ -136,7 +136,7 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
     return gen_list
     
 
-# %% ../nbs/00_core.ipynb 23
+# %% ../nbs/00_core.ipynb 22
 #Commande line interface
 @click.command()
 @click.argument('fastq', type=click.Path(exists=True))
@@ -147,7 +147,6 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
 @click.option('--reads_thr', '-r', default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error corrects for UMIs with multiple reads")
 @click.option('--output', '-o', default="genotypes.csv", help="output file path")
 def dgrec_genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_thr, output):
-    warnings.simplefilter("ignore")
     ref=next(SeqIO.parse(ref,"fasta"))
     ref_seq=str(ref.seq)
     gen_list = get_genotypes(fastq, ref_seq, 
