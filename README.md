@@ -6,7 +6,7 @@
 ## Install
 
 ``` sh
-pip install git+https://github.com/dbikard/DGRec.git
+pip install git+https://github.com/dbikard/dgrec.git
 ```
 
 ## How to use
@@ -14,13 +14,38 @@ pip install git+https://github.com/dbikard/DGRec.git
 ### Command line interface
 
 ``` sh
-DGRec_genotypes fastq_path reference_path -o genotypes.csv
+dgrec_genotypes fastq_path reference_path -o genotypes.csv
 ```
+
+``` python
+!dgrec_genotypes --help
+```
+
+    /home/dbikard/anaconda3/envs/DGRec/lib/python3.11/site-packages/Bio/__init__.py:138: BiopythonWarning: You may be importing Biopython from inside the source tree. This is bad practice and might lead to downstream issues. In particular, you might encounter ImportErrors due to missing compiled C extensions. We recommend that you try running your code from outside the source tree. If you are outside the source tree then you have a setup.py file in an unexpected directory: /home/dbikard/anaconda3/envs/DGRec/lib/python3.11/site-packages
+      warnings.warn(
+    /home/dbikard/anaconda3/envs/DGRec/lib/python3.11/site-packages/Bio/pairwise2.py:278: BiopythonDeprecationWarning: Bio.pairwise2 has been deprecated, and we intend to remove it in a future release of Biopython. As an alternative, please consider using Bio.Align.PairwiseAligner as a replacement, and contact the Biopython developers if you still need the Bio.pairwise2 module.
+      warnings.warn(
+    Usage: dgrec_genotypes [OPTIONS] FASTQ REF
+
+    Options:
+      -u, --umi_size INTEGER          Number of nucleotides at the begining of the
+                                      read that will be used as the UMI
+      -q, --quality_threshold INTEGER
+                                      threshold value used to filter out reads of
+                                      poor average quality
+      -i, --ignore_pos TEXT           list of positions that are ignored in the
+                                      genotype, e.g. [0,1,149,150]
+      -r, --reads_thr INTEGER         minimum number of reads required to take a
+                                      UMI into account. Using a number >2 enables
+                                      to perform error corrects for UMIs with
+                                      multiple reads
+      -o, --output TEXT               output file path
+      --help                          Show this message and exit.
 
 ### In python
 
 ``` python
-import DGRec
+import dgrec
 ```
 
 ``` python
@@ -37,7 +62,7 @@ ref=next(SeqIO.parse(os.path.join(data_path,read_ref_file),"fasta"))
 ref_seq=str(ref.seq)
 
 #Generating a list of genotypes sorted by the number of UMIs that are read for each genotype
-gen_list = DGRec.get_genotypes(fastq_path, ref_seq, ignore_pos=[0,1,2,138,139,140,141])
+gen_list = dgrec.get_genotypes(fastq_path, ref_seq, ignore_pos=[0,1,2,138,139,140,141])
 
 #Printing the top results
 for g in gen_list[:20]:
@@ -70,3 +95,9 @@ for g in gen_list[:20]:
     1   T108A,G127T,G132T
     1   A48T,A86G
     1   A61T,A68T,A72G,A79C,A91G
+
+``` python
+fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name="sacB", plot_range=[0,139], TR_range=[50,119])
+```
+
+![](index_files/figure-commonmark/cell-5-output-1.png)

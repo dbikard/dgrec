@@ -2,8 +2,8 @@ project:
   output-dir: _docs
 
 website:
-  title: "DGRec"
-  site-url: "https://dbikard.github.io/DGRec"
+  title: "dgrec"
+  site-url: "https://dbikard.github.io/dgrec"
   description: "Analysing DGRec data"
   repo-branch: main
   repo-url: "https://github.com/dbikard/DGRec"
