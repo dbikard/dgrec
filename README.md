@@ -17,24 +17,22 @@ pip install git+https://github.com/dbikard/dgrec.git
 dgrec_genotypes fastq_path reference_path -o genotypes.csv
 ```
 
-``` sh
-Usage: dgrec_genotypes [OPTIONS] FASTQ REF
+    Usage: dgrec_genotypes [OPTIONS] FASTQ REF
 
-Options:
-  -u, --umi_size INTEGER          Number of nucleotides at the begining of the
-                                  read that will be used as the UMI
-  -q, --quality_threshold INTEGER
-                                  threshold value used to filter out reads of
-                                  poor average quality
-  -i, --ignore_pos TEXT           list of positions that are ignored in the
-                                  genotype, e.g. [0,1,149,150]
-  -r, --reads_thr INTEGER         minimum number of reads required to take a
-                                  UMI into account. Using a number >2 enables
-                                  to perform error corrects for UMIs with
-                                  multiple reads
-  -o, --output TEXT               output file path
-  --help                          Show this message and exit.
-```
+    Options:
+      -u, --umi_size INTEGER          Number of nucleotides at the begining of the
+                                      read that will be used as the UMI
+      -q, --quality_threshold INTEGER
+                                      threshold value used to filter out reads of
+                                      poor average quality
+      -i, --ignore_pos TEXT           list of positions that are ignored in the
+                                      genotype, e.g. [0,1,149,150]
+      -r, --reads_thr INTEGER         minimum number of reads required to take a
+                                      UMI into account. Using a number >2 enables
+                                      to perform error correction for UMIs with
+                                      multiple reads
+      -o, --output TEXT               output file path
+      --help                          Show this message and exit.
 
 ### In python
 
