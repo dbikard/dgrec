@@ -126,7 +126,7 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
                     umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
                     quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                     ignore_pos: list = [], #list of positions that are ignored in the genotype
-                    reads_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error corrects for UMIs with multiple reads.
+                    reads_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
                     ):
     """Putting things together in a single wrapper function that takes the fastq as input and returns the list of genotypes."""
     UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, quality_threshold, ignore_pos)
@@ -144,7 +144,7 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
 @click.option('--umi_size', '-u', default=10, help="Number of nucleotides at the begining of the read that will be used as the UMI")
 @click.option('--quality_threshold', '-q', default=10, help="threshold value used to filter out reads of poor average quality")
 @click.option('--ignore_pos', '-i', default=[], multiple=True, help="list of positions that are ignored in the genotype, e.g. [0,1,149,150]")
-@click.option('--reads_thr', '-r', default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error corrects for UMIs with multiple reads")
+@click.option('--reads_thr', '-r', default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads")
 @click.option('--output', '-o', default="genotypes.csv", help="output file path")
 def dgrec_genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_thr, output):
     ref=next(SeqIO.parse(ref,"fasta"))
