@@ -94,4 +94,4 @@ for g in gen_list[:20]:
 fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name="sacB", TR_range=[50,119])
 ```
 
-![](index_files/figure-commonmark/cell-4-output-1.png)
+![](index_files/figure-commonmark/cell-5-output-1.png)
