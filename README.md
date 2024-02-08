@@ -97,7 +97,7 @@ for g in gen_list[:20]:
     1   A61T,A68T,A72G,A79C,A91G
 
 ``` python
-fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name="sacB", plot_range=[0,139], TR_range=[50,119])
+fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name="sacB", TR_range=[50,119])
 ```
 
 ![](index_files/figure-commonmark/cell-5-output-1.png)
