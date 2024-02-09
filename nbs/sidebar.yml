@@ -7,6 +7,10 @@ website:
           - API/00_core.ipynb
           - API/01_plotting.ipynb
           - API/02_utils.ipynb
+          - API/03_analysis.ipynb
       - section: DGRec data analysis
         contents:
           - DGRec data analysis/00_mutation_distribution.ipynb
+      - section: TR scoring
+        contents:
+          - TR scoring/01_Sequence_Encoding.ipynb

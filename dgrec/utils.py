@@ -14,7 +14,7 @@ from .pairwise2 import format_alignment
 from Bio.Align import PairwiseAligner
 from Bio.Seq import Seq
 
-# %% ../nbs/API/02_utils.ipynb 4
+# %% ../nbs/API/02_utils.ipynb 3
 def align2mut(align):
     """Converts a sequence alignment result from Bio.pairwise2.Align.globalms into a list of mutations.
     Positions are those of the alignment."""
@@ -25,7 +25,7 @@ def align2mut(align):
             res.append(mut)
     return res
 
-# %% ../nbs/API/02_utils.ipynb 6
+# %% ../nbs/API/02_utils.ipynb 5
 def mut_rix(mutations):
     """Reindexes the positions of the mutations to go from 
     their position in the sequence alignment to their position in the original sequence."""
@@ -39,7 +39,7 @@ def mut_rix(mutations):
             
     return res_rix
 
-# %% ../nbs/API/02_utils.ipynb 8
+# %% ../nbs/API/02_utils.ipynb 7
 def get_mutations(seqA,seqB):
     """Aligns two sequences and returns a genotype string.
     The string is a comma separated list of mutations.
@@ -49,14 +49,14 @@ def get_mutations(seqA,seqB):
     mutations=mut_rix(mutations)
     return mutations
 
-# %% ../nbs/API/02_utils.ipynb 14
+# %% ../nbs/API/02_utils.ipynb 13
 def mut_to_str(mutations: list):
     """Converts list of mutations to a comma separated string"""
     mut_str_list=[''.join(map(str,mut)) for mut in mutations]
     mut_str=','.join(mut_str_list)
     return mut_str
 
-# %% ../nbs/API/02_utils.ipynb 16
+# %% ../nbs/API/02_utils.ipynb 15
 def str_to_mut(gen: str):
     """Converts genotype string to a list of mutations"""
     
@@ -73,7 +73,7 @@ def str_to_mut(gen: str):
 
         return mutations
 
-# %% ../nbs/API/02_utils.ipynb 18
+# %% ../nbs/API/02_utils.ipynb 17
 def genstr_to_seq(genstr,refseq):
     j=0
     seq=''
@@ -94,7 +94,7 @@ def genstr_to_seq(genstr,refseq):
 
     return seq
 
-# %% ../nbs/API/02_utils.ipynb 21
+# %% ../nbs/API/02_utils.ipynb 20
 def get_prot_mut(genstr,refseq):
     mut_seq=genstr_to_seq(genstr,refseq)
     mut_prot=Seq(mut_seq).translate()
@@ -102,7 +102,7 @@ def get_prot_mut(genstr,refseq):
     return mut_to_str(get_mutations(ref_prot,mut_prot))
 
 
-# %% ../nbs/API/02_utils.ipynb 24
+# %% ../nbs/API/02_utils.ipynb 23
 def parse_genotypes(genotypes_file):
     gen_list=[]
     with open(genotypes_file,"r") as handle: 
@@ -111,7 +111,7 @@ def parse_genotypes(genotypes_file):
             gen_list.append((row[0],int(row[1])))
     return gen_list
 
-# %% ../nbs/API/02_utils.ipynb 27
+# %% ../nbs/API/02_utils.ipynb 26
 def downsample_fastq_gz(input_file, output_file, num_reads=10000):
     """Downsamples a compressed FASTQ file to the specified number of reads.
 
@@ -126,7 +126,7 @@ def downsample_fastq_gz(input_file, output_file, num_reads=10000):
         for line in lines:
             outfile.write(line)
 
-# %% ../nbs/API/02_utils.ipynb 29
+# %% ../nbs/API/02_utils.ipynb 28
 def get_basename_without_extension(file_path):
     """
     Extracts the basename of a file without the extension.
