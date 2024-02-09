@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['align2mut', 'mut_rix', 'get_mutations', 'mut_to_str', 'str_to_mut', 'genstr_to_seq', 'get_prot_mut',
-           'parse_genotypes', 'downsample_fastq_gz']
+           'parse_genotypes', 'downsample_fastq_gz', 'get_basename_without_extension']
 
 # %% ../nbs/API/02_utils.ipynb 2
 import gzip
@@ -59,15 +59,19 @@ def mut_to_str(mutations: list):
 # %% ../nbs/API/02_utils.ipynb 16
 def str_to_mut(gen: str):
     """Converts genotype string to a list of mutations"""
+    
     mutations=[]
-    g=gen.split(',')
-    for mut in g:
-        mut_from=mut[0]
-        ix=int(mut[1:-1])
-        mut_to=mut[-1]
-        mutations.append([mut_from,ix,mut_to])
+    if gen=="":
+        return mutations
+    else:
+        g=gen.split(',')
+        for mut in g:
+            mut_from=mut[0]
+            ix=int(mut[1:-1])
+            mut_to=mut[-1]
+            mutations.append([mut_from,ix,mut_to])
 
-    return mutations
+        return mutations
 
 # %% ../nbs/API/02_utils.ipynb 18
 def genstr_to_seq(genstr,refseq):
@@ -121,3 +125,23 @@ def downsample_fastq_gz(input_file, output_file, num_reads=10000):
         lines = itertools.islice(infile, num_reads * 4)  # Read 4 lines (1 read) at a time
         for line in lines:
             outfile.write(line)
+
+# %% ../nbs/API/02_utils.ipynb 29
+def get_basename_without_extension(file_path):
+    """
+    Extracts the basename of a file without the extension.
+
+    Args:
+        file_path (str): The path to the file.
+
+    Returns:
+        str: The basename of the file without the extension.
+    """
+
+    basename = os.path.basename(file_path)
+    if '.' in basename:
+        # Split at the last dot to remove the extension
+        return basename.rsplit('.', 1)[0]
+    else:
+        # No extension, return the whole filename
+        return basename
