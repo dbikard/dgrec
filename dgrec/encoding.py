@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['base_pairing_probability_array', 'base_pairing_probability_max_mean_std', 'encoding_RNA_pairing', 'bases_frequency',
            'base_before_after_A', 'generate_dic_encode_two', 'count_base_duo', 'two_bases_frequency',
-           'encode_base_by_two']
+           'encode_base_by_two', 'encoding_seq_feature', 'encode_tr_list']
 
 # %% ../nbs/API/04_encoding.ipynb 2
 import ViennaRNA as RNA
@@ -304,3 +304,41 @@ def encode_base_by_two(sequence:str # The input DNA sequence to encode.
     # Flatten the array to obtain a single 1D representation
     return mean_splitted_encoded_duo.flatten()
 
+
+# %% ../nbs/API/04_encoding.ipynb 21
+def encoding_seq_feature(list_TRs: list # A list of DNA sequences (strings) to encode.
+                         ):
+    """
+    Encodes a list of DNA sequences by combining various encoding methods.
+    """
+
+    # Initialize an empty list to store the encoded features
+    new_features_encoded = []
+
+    # Iterate through each DNA sequence in the list
+    for TR in list_TRs:
+
+        # Calculate the base frequency features
+        encoded_feature = bases_frequency(TR) 
+
+        # Calculate the base-before-after-A features
+        encoded_feature = np.concatenate((encoded_feature, base_before_after_A(TR)))  
+
+        # Encode the sequence using base duo representation
+        encoded_feature = np.concatenate((encoded_feature, encode_base_by_two(TR))) 
+
+        # Append the encoded features for this sequence to the list
+        new_features_encoded.append(encoded_feature)
+
+    # Convert the list of encoded features into a NumPy array
+    return np.array(new_features_encoded)
+
+
+# %% ../nbs/API/04_encoding.ipynb 23
+def encode_tr_list(list_TRs:list ## A list of TRs DNA sequences (strings) to encode
+                   ):
+    "Concatenate the two encoding (RNA pairing and DNA TR sequence encoding)"
+    encode_pairing=encoding_RNA_pairing(list_TRs)
+    encode_pairing=encode_pairing.reshape((encode_pairing.shape[0],encode_pairing.shape[1]*encode_pairing.shape[2]))
+    encoding_new_features=encoding_seq_feature(list_TRs)
+    return np.concatenate((encode_pairing,encoding_new_features),axis=1)
