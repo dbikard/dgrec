@@ -2,7 +2,7 @@
 
 # %% auto 0
 __all__ = ['align2mut', 'mut_rix', 'get_mutations', 'mut_to_str', 'str_to_mut', 'genstr_to_seq', 'get_prot_mut',
-           'parse_genotypes', 'downsample_fastq_gz', 'get_basename_without_extension']
+           'parse_genotypes', 'downsample_fastq_gz', 'get_basename_without_extension', 'pickle_save', 'pickle_load']
 
 # %% ../nbs/API/02_utils.ipynb 2
 import gzip
@@ -145,3 +145,17 @@ def get_basename_without_extension(file_path):
     else:
         # No extension, return the whole filename
         return basename
+
+# %% ../nbs/API/02_utils.ipynb 32
+def pickle_save(data_in,file_name_out):
+    pickle_out = open(file_name_out,"wb")
+    pickle.dump(data_in, pickle_out)
+    pickle_out.close()
+    
+
+
+# %% ../nbs/API/02_utils.ipynb 33
+def pickle_load(file_name_in):
+    pickle_in = open(file_name_in,"rb")
+    data_out = pickle.load(pickle_in)
+    return data_out
