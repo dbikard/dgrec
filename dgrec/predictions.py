@@ -13,19 +13,19 @@ from .example_data import get_example_data_dir
 import os
 
 
-# %% ../nbs/API/05_predictions.ipynb 5
+# %% ../nbs/API/05_predictions.ipynb 4
 def score(TR_seq:str #A string of the TR DNA sequence
-):
+,model):
 
     """Calculates the predicted score of a given TR sequence (1 = perfect TR and 0 = crappy TR)"""
     encoded_TR=dgrec.encoding.encode_tr_list([TR_seq])
     score=np.round(model.predict_proba([encoded_TR[0]])[:,1],decimals=2).item()
     return score
 
-# %% ../nbs/API/05_predictions.ipynb 7
+# %% ../nbs/API/05_predictions.ipynb 6
 def score_list(TR_seq_list:list, #A list of strings of TRs DNA sequences
 TR_name_list:list, #A list of strings of TRs names
-):
+model):
     """Calculates the score for every TR in the list and returns them in a dataframe format"""
 
     encoded_TR=dgrec.encoding.encode_tr_list(TR_seq_list)
