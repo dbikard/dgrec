@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['align2mut', 'mut_rix', 'get_mutations', 'mut_to_str', 'str_to_mut', 'genstr_to_seq', 'get_prot_mut',
            'parse_genotypes', 'downsample_fastq_gz', 'get_basename_without_extension', 'pickle_save', 'pickle_load',
-           'make_dgr_oligos']
+           'reverse_complement', 'make_dgr_oligos']
 
 # %% ../nbs/API/02_utils.ipynb 2
 import gzip
@@ -160,6 +160,14 @@ def pickle_load(file_name_in):
     pickle_in = open(file_name_in,"rb")
     data_out = pickle.load(pickle_in)
     return data_out
+
+# %% ../nbs/API/02_utils.ipynb 34
+def reverse_complement(sequence):
+    complement_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
+    reverse_sequence = sequence[::-1]
+    reverse_complement_sequence = ''.join(complement_dict[base] for base in reverse_sequence)
+    return reverse_complement_sequence
+
 
 # %% ../nbs/API/02_utils.ipynb 35
 def make_dgr_oligos(target:str #TR DNA
