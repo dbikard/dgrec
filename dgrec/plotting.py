@@ -69,5 +69,5 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
     #fig.savefig(base_path+"Plots/png/{}-{}_UMI_corrected_genotypes.png".format(sample.Sample_ID,sample.Sample_Name), dpi=300)
     #fig.savefig(base_path+"Plots/eps/{}-{}_UMI_corrected_genotypes.eps".format(sample.Sample_ID,sample.Sample_Name), format='eps')
     #plt.close()
-    return fig
+    return ax
     
