@@ -9,6 +9,7 @@ website:
           - API/02_utils.ipynb
           - API/03_analysis.ipynb
           - API/04_encoding.ipynb
+          - API/05_predictions.ipynb
       - section: DGRec data analysis
         contents:
           - DGRec data analysis/00_mutation_distribution.ipynb

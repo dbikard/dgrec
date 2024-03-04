@@ -2,7 +2,8 @@
 
 # %% auto 0
 __all__ = ['align2mut', 'mut_rix', 'get_mutations', 'mut_to_str', 'str_to_mut', 'genstr_to_seq', 'get_prot_mut',
-           'parse_genotypes', 'downsample_fastq_gz', 'get_basename_without_extension']
+           'parse_genotypes', 'downsample_fastq_gz', 'get_basename_without_extension', 'pickle_save', 'pickle_load',
+           'reverse_complement', 'make_dgr_oligos']
 
 # %% ../nbs/API/02_utils.ipynb 2
 import gzip
@@ -145,3 +146,73 @@ def get_basename_without_extension(file_path):
     else:
         # No extension, return the whole filename
         return basename
+
+# %% ../nbs/API/02_utils.ipynb 32
+def pickle_save(data_in,file_name_out):
+    pickle_out = open(file_name_out,"wb")
+    pickle.dump(data_in, pickle_out)
+    pickle_out.close()
+    
+
+
+# %% ../nbs/API/02_utils.ipynb 33
+def pickle_load(file_name_in):
+    pickle_in = open(file_name_in,"rb")
+    data_out = pickle.load(pickle_in)
+    return data_out
+
+# %% ../nbs/API/02_utils.ipynb 34
+def reverse_complement(sequence):
+    complement_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
+    reverse_sequence = sequence[::-1]
+    reverse_complement_sequence = ''.join(complement_dict[base] for base in reverse_sequence)
+    return reverse_complement_sequence
+
+
+# %% ../nbs/API/02_utils.ipynb 35
+def make_dgr_oligos(target:str #TR DNA
+                    ,split_number:int #Number of desired splits
+                    ):
+    "Split the TR target into the input number and then generates the oligos to order"
+    bad_overhangs=['AATT', 'ATAT', 'TATA', 'TTAA', 'ACGT', 'CATG', 'CTAG', 'GATC', 'GTAC', 'TCGA', 'TGCA', 'CCGG', 'CGCG', 'GCGC', 'GGCC']
+    target=target.upper()
+    split=len(target)//split_number
+    overhang_list=[]
+    split_k_list=[]
+    forward_list=[]
+    reverse_list=[]
+    full_list=[]
+
+
+    
+    for k in range(1,split_number):
+        split_k=k*split
+        overhang = target[split_k-2:split_k+2]
+        
+        while overhang in bad_overhangs+['ATAA','TCAG']:
+            if split_k%2 == 0:
+                split_k += 1
+                print('+1')
+            elif split_k%2 == 1:
+                split_k += -1
+                print('-1')
+            overhang = target[split_k-2:split_k+2]
+        overhang_list.append(overhang)
+        split_k_list.append(split_k)
+
+    forward_list.append('ATAA'+target[:split_k_list[0]-2])
+    reverse_list.append(reverse_complement(target[:split_k_list[0]+2]))
+
+    for j in range (len(split_k_list)-1):
+        forward_list.append(target[split_k_list[j]-2:split_k_list[j+1]-2])
+        reverse_list.append(reverse_complement(target[split_k_list[j]+2:split_k_list[j+1]+2]))
+
+
+    forward_list.append(target[split_k_list[-1]-2:])
+    reverse_list.append('CAGA'+reverse_complement(target[split_k_list[-1]+2:]))
+
+    for i in range(split_number):
+        full_list.append(forward_list[i])
+        full_list.append(reverse_list[i])
+            
+    return(full_list)
