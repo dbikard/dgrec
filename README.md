@@ -15,11 +15,13 @@ pip install git+https://github.com/dbikard/dgrec.git
 
 ### Command line interface
 
+#### Single reads
+
 ``` sh
-dgrec_genotypes fastq_path reference_path -o genotypes.csv
+dgrec genotypes fastq_path reference_path -o genotypes.csv
 ```
 
-    Usage: dgrec_genotypes [OPTIONS] FASTQ REF
+    Usage: dgrec genotypes [OPTIONS] FASTQ REF
 
     Options:
       -u, --umi_size INTEGER          Number of nucleotides at the begining of the
@@ -29,11 +31,63 @@ dgrec_genotypes fastq_path reference_path -o genotypes.csv
                                       poor average quality
       -i, --ignore_pos TEXT           list of positions that are ignored in the
                                       genotype, e.g. [0,1,149,150]
-      -r, --reads_thr INTEGER         minimum number of reads required to take a
+      -r, --reads_per_umi_thr INTEGER
+                                      minimum number of reads required to take a
                                       UMI into account. Using a number >2 enables
                                       to perform error correction for UMIs with
                                       multiple reads
+      -s, --save_umi_data TEXT        path to a csv file to save the details of
+                                      the genotypes reads for each UMI. If None
+                                      the data isn't saved.
       -o, --output TEXT               output file path
+      --help                          Show this message and exit.
+
+#### Paired reads
+
+``` sh
+dgrec genotypes fastq_path reference_path -o genotypes.csv
+```
+
+    Usage: dgrec genotypes_paired [OPTIONS] FASTQ_FWD FASTQ_REV REF
+
+      Calls dgrec.genotypes_paired.get_genotypes_paired
+
+    Options:
+      --fwd_span <INTEGER INTEGER>...
+                                      Span of the reference sequence read in the
+                                      forward orientation format: (start, end)
+                                      [required]
+      --rev_span <INTEGER INTEGER>...
+                                      Span of the reference sequence read in the
+                                      reverse orientation format: (start, end)
+                                      [required]
+      -p, --require_perfect_pair_agreement
+                                      Require perfect pair agreement for genotype
+                                      calling (default: True).                  If
+                                      set to False, the forward sequence will be
+                                      used in case of disagreement.
+      -u1, --umi_size_fwd INTEGER     Number of nucleotides at the beginning of
+                                      the fwd read that will be used as the UMI
+                                      (default: 10)
+      -u2, --umi_size_rev INTEGER     Number of nucleotides at the beginning of
+                                      the rev read that will be used as the UMI
+                                      (default: 0)
+      -q, --quality_threshold INTEGER
+                                      Threshold value used to filter out reads of
+                                      poor average quality (default: 30)
+      -i, --ignore_pos TEXT           List of positions that are ignored in the
+                                      genotype (default: [])
+      -r, --reads_per_umi_thr INTEGER
+                                      Minimum number of reads required to take a
+                                      UMI into account (default: 0).
+                                      Using a number >2 enables to perform error
+                                      correction for UMIs with multiple reads
+      -s, --save_umi_data TEXT        Path to a csv file to save the details of
+                                      the genotypes reads for each UMI. If None
+                                      the data isn't saved (default: None)
+      -n TEXT                         Number of reads to use. If None all the
+                                      reads are used (default: None)
+      -o, --output TEXT               Output file path
       --help                          Show this message and exit.
 
 ### In python
@@ -67,7 +121,7 @@ for g in gen_list[:20]:
     n_reads pass filter:    847
     n_reads aligned:    824
     Number of UMIs: 814
-
+    Median number of reads per UMI: 1.0
     Number of genotypes: 123
     675 
     3   C56A
@@ -94,4 +148,4 @@ for g in gen_list[:20]:
 fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name="sacB", TR_range=[50,119])
 ```
 
-![](index_files/figure-commonmark/cell-5-output-1.png)
+![](index_files/figure-commonmark/cell-6-output-1.png)
