@@ -63,7 +63,7 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
 
 # %% ../nbs/API/00_core.ipynb 9
 def correct_UMI_genotypes(UMI_gencounter: dict, #the output of the get_UMI_genotype function
-                          reads_per_UMI_thr=2 #only assign a genotype to a UMI if we have reads_per_UMI_thr reads for that genotype or more
+                          reads_per_umi_thr=2 #only assign a genotype to a UMI if we have reads_per_umi_thr reads for that genotype or more
                           ) -> dict:
     """Keeps only the genotype with the most reads for each UMI.
     Returns a dictionary with UMIs as keys and a tuple as value: (genotype string, number of reads)
@@ -71,7 +71,7 @@ def correct_UMI_genotypes(UMI_gencounter: dict, #the output of the get_UMI_genot
     UMI_gen_dict={}
     for umi in UMI_gencounter:
         gen, n =UMI_gencounter[umi].most_common(1)[0]
-        if n>=reads_per_UMI_thr: #only assign a genotype to a UMI if we have reads_per_UMI_thr reads for that genotype or more
+        if n>=reads_per_umi_thr: #only assign a genotype to a UMI if we have reads_per_umi_thr reads for that genotype or more
             UMI_gen_dict[umi]=gen
 
     return UMI_gen_dict
@@ -91,7 +91,7 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
                     umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
                     quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                     ignore_pos: list = [], #list of positions that are ignored in the genotype
-                    reads_per_UMI_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
+                    reads_per_umi_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
                     save_umi_data: str = None, #path to the csv file where to save the details of the genotypes reads for each UMI. If None the data isn't saved.
                     ):
     """Putting things together in a single wrapper function that takes the fastq as input and returns the list of genotypes."""
@@ -100,9 +100,9 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
         with open(save_umi_data,"w", newline='') as handle: 
             csv_writer = csv.writer(handle,delimiter="\t",doublequote=False)
             for umi in itertools.islice(UMI_dict,20):
-                csv_writer.writerow([umi,list(UMI_gencounter[umi].items())])
+                csv_writer.writerow([umi,list(UMI_dict[umi].items())])
 
-    UMI_gen_dict=correct_UMI_genotypes(UMI_dict, reads_per_UMI_thr)
+    UMI_gen_dict=correct_UMI_genotypes(UMI_dict, reads_per_umi_thr)
     gen_list = genotype_UMI_counter(UMI_gen_dict)
     print("Number of genotypes:", len(gen_list))
     return gen_list
@@ -211,7 +211,7 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                         umi_size_rev: int = 0, #number of nucleotides at the begining of the rev read that will be used as the UMI (if both are provided the umi will be the concatenation of both)
                         quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                         ignore_pos: list = [], #list of positions that are ignored in the genotype
-                        reads_per_UMI_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
+                        reads_per_umi_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
                         save_umi_data: str = None, #path to the csv file where to save the details of the genotypes reads for each UMI. If None the data isn't saved.
                         N = None, #number of reads to consider (useful to get a quick view of the data without going through the whole fastq files). If None the whole data will be used.
                         ):
@@ -232,9 +232,9 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
         with open(save_umi_data,"w", newline='') as handle: 
             csv_writer = csv.writer(handle,delimiter="\t",doublequote=False)
             for umi in itertools.islice(UMI_dict,20):
-                csv_writer.writerow([umi,list(UMI_gencounter[umi].items())])
+                csv_writer.writerow([umi,list(UMI_dict[umi].items())])
 
-    UMI_gen_dict=correct_UMI_genotypes(UMI_dict, reads_per_UMI_thr)
+    UMI_gen_dict=correct_UMI_genotypes(UMI_dict, reads_per_umi_thr)
     gen_list = genotype_UMI_counter(UMI_gen_dict)
     print("Number of genotypes:", len(gen_list))
     return gen_list
@@ -247,17 +247,17 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
 @click.option('--umi_size', '-u', default=10, help="Number of nucleotides at the begining of the read that will be used as the UMI")
 @click.option('--quality_threshold', '-q', default=10, help="threshold value used to filter out reads of poor average quality")
 @click.option('--ignore_pos', '-i', default=[], multiple=True, help="list of positions that are ignored in the genotype, e.g. [0,1,149,150]")
-@click.option('--reads_per_UMI_thr', '-r', default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads")
+@click.option('--reads_per_umi_thr', '-r', default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads")
 @click.option('--save_umi_data','-s', default=None, help="path to a csv file to save the details of the genotypes reads for each UMI. If None the data isn't saved.")
 @click.option('--output', '-o', default="genotypes.csv", help="output file path")
-def dgrec_genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_per_UMI_thr, save_umi_data, output):
+def dgrec_genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_per_umi_thr, save_umi_data, output):
     ref=next(SeqIO.parse(ref,"fasta"))
     ref_seq=str(ref.seq)
     gen_list = get_genotypes(fastq, ref_seq, 
                              umi_size=umi_size, 
                              quality_threshold=quality_threshold, 
                              ignore_pos=ignore_pos,
-                             reads_per_UMI_thr=reads_per_UMI_thr,
+                             reads_per_umi_thr=reads_per_umi_thr,
                              save_umi_data=save_umi_data)
     
     with open(output,"w") as handle:
