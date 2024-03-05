@@ -122,9 +122,7 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                             N = None, #number of reads to consider (useful to get a quick view of the data without going through the whole fastq files). If None the whole data will be used.
                             ) -> dict:
     
-    """Takes as input a fastq_file of single read amplicon sequencing, and a reference amplicon sequence.
-       Returns a dictionnary containing as keys UMIs and as values a Counter of all genotype strings read for that UMI.
-    """
+
     fwd_span = sorted(fwd_span)
     rev_span = sorted(rev_span)
 
@@ -172,10 +170,16 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                             continue
                         
                     consensus=fwd_seq+rev_seq[overlap_size:]
+                    mutations=get_mutations(ref_seq[fwd_span[0]:rev_span[1]],consensus)
                 else:
-                    consensus=fwd_seq
-                
-                mutations=get_mutations(ref_seq,consensus)
+                    consensus=""
+                    if fwd_span[1]-fwd_span[0]>0:
+                        consensus+=fwd_seq
+                    if rev_span[1]-rev_span[0]>0:
+                        consensus+=rev_seq
+                        
+                    mutations=get_mutations(ref_seq[fwd_span[0]:fwd_span[1]]+ref_seq[rev_span[0]:rev_span[1]],consensus)
+
                 if ignore_pos:
                     mutations = [m for m in mutations if m[1] not in ignore_pos]
                 n_mut=len(mutations)
@@ -196,12 +200,13 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
     print(log)
     return UMI_gencounter
 
-# %% ../nbs/API/00_core.ipynb 18
+# %% ../nbs/API/00_core.ipynb 19
 def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file reading the ref_seq in the forward orientation
                         fastq_path_rev: str, #path to the input fastq file reading the ref_seq in the reverse orientation
                         ref_seq: str, #sequence of the reference amplicon
                         fwd_span: tuple, #span of the ref_seq that is read in the forward orientation format: (start, end)
                         rev_span: tuple, #span of the ref_seq that is read in the reverse orientation format: (start, end)
+                        require_perfect_pair_agreement: bool = True, #if True only pairs of reads that perfectly agree on the sequence within the common span will be used. If False the fwd sequence will be used. Will be set to False by default if there is no overlap.
                         umi_size_fwd: int = 10, #number of nucleotides at the begining of the fwd read that will be used as the UMI
                         umi_size_rev: int = 0, #number of nucleotides at the begining of the rev read that will be used as the UMI (if both are provided the umi will be the concatenation of both)
                         quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
@@ -216,6 +221,7 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                                          ref_seq, 
                                          fwd_span=fwd_span, 
                                          rev_span=rev_span,
+                                         require_perfect_pair_agreement=require_perfect_pair_agreement,
                                          umi_size_fwd=umi_size_fwd,
                                          umi_size_rev=umi_size_rev,
                                          quality_threshold=quality_threshold,
@@ -233,7 +239,7 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
     print("Number of genotypes:", len(gen_list))
     return gen_list
 
-# %% ../nbs/API/00_core.ipynb 20
+# %% ../nbs/API/00_core.ipynb 21
 #Commande line interface
 @click.command()
 @click.argument('fastq', type=click.Path(exists=True))
