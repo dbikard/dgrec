@@ -27,10 +27,10 @@ def dgrec():
 @dgrec.command('genotypes')
 @click.argument('fastq', type=click.Path(exists=True))
 @click.argument('ref', type=click.Path(exists=True))
-@click.option('--umi_size', '-u', default=10, help="Number of nucleotides at the begining of the read that will be used as the UMI")
-@click.option('--quality_threshold', '-q', default=10, help="threshold value used to filter out reads of poor average quality")
-@click.option('--ignore_pos', '-i', default=[], multiple=True, help="list of positions that are ignored in the genotype, e.g. [0,1,149,150]")
-@click.option('--reads_per_umi_thr', '-r', default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads")
+@click.option('--umi_size', '-u', type=int, default=10, help="Number of nucleotides at the begining of the read that will be used as the UMI")
+@click.option('--quality_threshold', '-q',type=int,  default=10, help="threshold value used to filter out reads of poor average quality")
+@click.option('--ignore_pos', '-i', type=list, default=[], multiple=True, help="list of positions that are ignored in the genotype, e.g. [0,1,149,150]")
+@click.option('--reads_per_umi_thr', '-r', type=int, default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads")
 @click.option('--save_umi_data','-s', default=None, help="path to a csv file to save the details of the genotypes reads for each UMI. If None the data isn't saved.")
 @click.option('--output', '-o', default="genotypes.csv", help="output file path")
 def genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_per_umi_thr, save_umi_data, output):
@@ -53,26 +53,26 @@ def genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_per_umi
 @click.argument('fastq_rev', type=click.Path(exists=True))
 @click.argument('ref', type=click.Path(exists=True))
 @click.option('--fwd_span', nargs=2, type=(int, int), required = True, 
-              help ="Span of the reference sequence read in the forward orientation format: (start, end)")
+              help ="Span of the reference sequence read in the forward orientation format: start end")
 @click.option('--rev_span', nargs=2, type=(int, int), required = True, 
-              help ="Span of the reference sequence read in the reverse orientation format: (start, end)")
+              help ="Span of the reference sequence read in the reverse orientation format: start end")
 @click.option('--require_perfect_pair_agreement', '-p', is_flag=True, default=True, 
               help="Require perfect pair agreement for genotype calling (default: True).\
                   If set to False, the forward sequence will be used in case of disagreement.")
-@click.option('--umi_size_fwd', '-u1', default=10,
+@click.option('--umi_size_fwd', '-u1', type=int, default=10,
               help="Number of nucleotides at the beginning of the fwd read that will be used as the UMI (default: 10)")
-@click.option('--umi_size_rev', '-u2', default=0,
+@click.option('--umi_size_rev', '-u2', type=int, default=0,
               help="Number of nucleotides at the beginning of the rev read that will be used as the UMI (default: 0)")
-@click.option('--quality_threshold', '-q', default=30,
+@click.option('--quality_threshold', '-q', type=int, default=30,
               help="Threshold value used to filter out reads of poor average quality (default: 30)")
-@click.option('--ignore_pos', '-i', default=[], multiple=True,
+@click.option('--ignore_pos', '-i', type=list, default=[], multiple=True,
               help="List of positions that are ignored in the genotype (default: [])")
-@click.option('--reads_per_umi_thr', '-r', default=0,
+@click.option('--reads_per_umi_thr', '-r', type=int, default=0,
               help="Minimum number of reads required to take a UMI into account (default: 0).\
                   Using a number >2 enables to perform error correction for UMIs with multiple reads")
 @click.option('--save_umi_data','-s', default=None,
               help="Path to a csv file to save the details of the genotypes reads for each UMI. If None the data isn't saved (default: None)")
-@click.option('-n', default=None, help="Number of reads to use. If None all the reads are used (default: None)")
+@click.option('-n', type=int, default=None, help="Number of reads to use. If None all the reads are used (default: None)")
 @click.option('--output', '-o', default="genotypes.csv", help="Output file path")
 def genotypes_paired(fastq_fwd, fastq_rev, ref, fwd_span, rev_span, require_perfect_pair_agreement, umi_size_fwd, umi_size_rev, quality_threshold, ignore_pos, reads_per_umi_thr, save_umi_data, n, output):
   """Calls dgrec.genotypes_paired.get_genotypes_paired
@@ -89,7 +89,7 @@ def genotypes_paired(fastq_fwd, fastq_rev, ref, fwd_span, rev_span, require_perf
                                    ignore_pos=ignore_pos,
                                    reads_per_umi_thr=reads_per_umi_thr,
                                    save_umi_data=save_umi_data,
-                                   N=int(n))
+                                   N=n)
   
   with open(output,"w") as handle:
     for g,n in gen_list:

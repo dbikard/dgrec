@@ -29,7 +29,7 @@ dgrec genotypes fastq_path reference_path -o genotypes.csv
       -q, --quality_threshold INTEGER
                                       threshold value used to filter out reads of
                                       poor average quality
-      -i, --ignore_pos TEXT           list of positions that are ignored in the
+      -i, --ignore_pos LIST           list of positions that are ignored in the
                                       genotype, e.g. [0,1,149,150]
       -r, --reads_per_umi_thr INTEGER
                                       minimum number of reads required to take a
@@ -45,7 +45,7 @@ dgrec genotypes fastq_path reference_path -o genotypes.csv
 #### Paired reads
 
 ``` sh
-dgrec genotypes fastq_path reference_path -o genotypes.csv
+dgrec genotypes_paired fwd_fastq_path rev_fastq_path reference_path --fwd_span 0 150 --rev_span 30 150 -o genotypes.csv
 ```
 
     Usage: dgrec genotypes_paired [OPTIONS] FASTQ_FWD FASTQ_REV REF
@@ -55,11 +55,11 @@ dgrec genotypes fastq_path reference_path -o genotypes.csv
     Options:
       --fwd_span <INTEGER INTEGER>...
                                       Span of the reference sequence read in the
-                                      forward orientation format: (start, end)
+                                      forward orientation format: start end
                                       [required]
       --rev_span <INTEGER INTEGER>...
                                       Span of the reference sequence read in the
-                                      reverse orientation format: (start, end)
+                                      reverse orientation format: start end
                                       [required]
       -p, --require_perfect_pair_agreement
                                       Require perfect pair agreement for genotype
@@ -75,7 +75,7 @@ dgrec genotypes fastq_path reference_path -o genotypes.csv
       -q, --quality_threshold INTEGER
                                       Threshold value used to filter out reads of
                                       poor average quality (default: 30)
-      -i, --ignore_pos TEXT           List of positions that are ignored in the
+      -i, --ignore_pos LIST           List of positions that are ignored in the
                                       genotype (default: [])
       -r, --reads_per_umi_thr INTEGER
                                       Minimum number of reads required to take a
@@ -85,7 +85,7 @@ dgrec genotypes fastq_path reference_path -o genotypes.csv
       -s, --save_umi_data TEXT        Path to a csv file to save the details of
                                       the genotypes reads for each UMI. If None
                                       the data isn't saved (default: None)
-      -n TEXT                         Number of reads to use. If None all the
+      -n INTEGER                      Number of reads to use. If None all the
                                       reads are used (default: None)
       -o, --output TEXT               Output file path
       --help                          Show this message and exit.
