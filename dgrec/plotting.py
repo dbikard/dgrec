@@ -13,6 +13,8 @@ import numpy as np
 from Bio import SeqIO
 from typing import Union
 from .utils import str_to_mut
+import dgrec.utils
+
 
 # %% ../nbs/API/02_plotting.ipynb 9
 def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple: (string representation of the genotype, number of molecules)
@@ -78,8 +80,11 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
                    sample_name: str = None,  #sample name
                    plot_range: Union[tuple,list] = None,  #limits the plot to the specified range
                    TR_range: Union[tuple,list] = None, #when specified creates a shaded box highlighting the position of the TR
-                   reverse_complement=False):
+                   rev_comp=False):
     
+    if rev_comp==True:
+        gen_list=dgrec.utils.reverse_comp_geno_list(gen_list,ref_seq)
+        ref_seq=dgrec.utils.reverse_complement(ref_seq)
 
     if not plot_range:
         plot_range=[0,len(ref_seq)]

@@ -59,6 +59,8 @@ d = { 'settings': { 'branch': 'main',
                              'dgrec.utils.parse_genotypes': ('API/utils.html#parse_genotypes', 'dgrec/utils.py'),
                              'dgrec.utils.pickle_load': ('API/utils.html#pickle_load', 'dgrec/utils.py'),
                              'dgrec.utils.pickle_save': ('API/utils.html#pickle_save', 'dgrec/utils.py'),
+                             'dgrec.utils.remove_position': ('API/utils.html#remove_position', 'dgrec/utils.py'),
+                             'dgrec.utils.remove_position_list': ('API/utils.html#remove_position_list', 'dgrec/utils.py'),
                              'dgrec.utils.reverse_comp_geno_list': ('API/utils.html#reverse_comp_geno_list', 'dgrec/utils.py'),
                              'dgrec.utils.reverse_complement': ('API/utils.html#reverse_complement', 'dgrec/utils.py'),
                              'dgrec.utils.str_to_mut': ('API/utils.html#str_to_mut', 'dgrec/utils.py')}}}
