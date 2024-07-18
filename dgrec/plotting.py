@@ -78,7 +78,7 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
                    sample_name: str = None,  #sample name
                    plot_range: Union[tuple,list] = None,  #limits the plot to the specified range
                    TR_range: Union[tuple,list] = None, #when specified creates a shaded box highlighting the position of the TR
-                   ):
+                   reverse_complement=False):
     
 
     if not plot_range:
@@ -111,7 +111,7 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
 
 
     for k in mut_arrays:
-        mut_arrays[k]=(mut_arrays[k][plot_range[0]:plot_range[1]])/count_geno
+        mut_arrays[k]=100*(mut_arrays[k][plot_range[0]:plot_range[1]])/count_geno
 
 
 

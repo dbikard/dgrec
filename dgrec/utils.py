@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['align2mut', 'mut_rix', 'get_mutations', 'mut_to_str', 'str_to_mut', 'genstr_to_seq', 'get_prot_mut',
            'parse_genotypes', 'downsample_fastq_gz', 'get_basename_without_extension', 'pickle_save', 'pickle_load',
-           'reverse_complement', 'make_dgr_oligos']
+           'reverse_complement', 'make_dgr_oligos', 'reverse_comp_geno_list']
 
 # %% ../nbs/API/07_utils.ipynb 2
 import gzip
@@ -216,3 +216,38 @@ def make_dgr_oligos(target:str #TR DNA
         full_list.append(reverse_list[i])
             
     return(full_list)
+
+# %% ../nbs/API/07_utils.ipynb 37
+def reverse_complement(dna):
+    # Dictionary to hold the complement of each base
+    complement = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
+    
+    # Reverse the DNA string
+    reversed_dna = dna[::-1]
+    
+    # Get the complement for each base in the reversed string
+    reverse_complement_dna = ''.join(complement[base] for base in reversed_dna)
+    
+    return reverse_complement_dna
+
+
+
+# %% ../nbs/API/07_utils.ipynb 38
+def reverse_comp_geno_list(geno_list:list # List of genotypes
+                           ,ref_seq:str #string of the template sequence
+                           ):
+    l=len(ref_seq)
+    geno_list_rev=[]
+    for geno in geno_list:
+        mut_list=geno[0].split(',')
+        umi_count=geno[1]
+        rev_mut_list=[]
+        for mut in mut_list:
+            old_base=mut[0]
+            new_base=mut[-1]
+            position=int(mut[1:-1])
+            rev_mut=reverse_complement(old_base)+str(l-position-1)+reverse_complement(new_base)
+            rev_mut_list.append((rev_mut))
+        geno_list_rev.append((','.join(rev_mut_list),umi_count))
+    return geno_list_rev
+
