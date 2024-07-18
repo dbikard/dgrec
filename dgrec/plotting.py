@@ -100,19 +100,20 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
 
     symbols=["A","T","G","C","del","ins","N"]
     mut_arrays=dict([(s,np.zeros(L)) for s in symbols])
-    for gen, n in gen_list[1:]: #assumes the genotypes with the most molecules is the WT sequence and skips it
-        g=gen.split(',')
-        count_muta+=n
-        for mut in g:
-            if mut:
-                mut_from=mut[0]
-                ix=int(mut[1:-1])
-                k=mut[-1]
-                if k=="-":
-                    k="del"
-                elif mut[0]=="-":
-                    k="ins"
-                mut_arrays[k][ix]+=n  
+    for gen, n in gen_list: #assumes the genotypes with the most molecules is the WT sequence and skips it
+        if gen!='':
+            g=gen.split(',')
+            count_muta+=n
+            for mut in g:
+                if mut:
+                    mut_from=mut[0]
+                    ix=int(mut[1:-1])
+                    k=mut[-1]
+                    if k=="-":
+                        k="del"
+                    elif mut[0]=="-":
+                        k="ins"
+                    mut_arrays[k][ix]+=n  
 
 
     for k in mut_arrays:
@@ -148,5 +149,4 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
     #fig.savefig(base_path+"Plots/png/{}-{}_UMI_corrected_genotypes.png".format(sample.Sample_ID,sample.Sample_Name), dpi=300)
     #fig.savefig(base_path+"Plots/eps/{}-{}_UMI_corrected_genotypes.eps".format(sample.Sample_ID,sample.Sample_Name), format='eps')
     #plt.close()
-    return ax
-    
+    return (ax,np.round(100*count_muta/count_geno,2))
