@@ -30,16 +30,24 @@ def dgrec():
 @click.option('--umi_size', '-u', type=int, default=10, help="Number of nucleotides at the begining of the read that will be used as the UMI")
 @click.option('--quality_threshold', '-q',type=int,  default=10, help="threshold value used to filter out reads of poor average quality")
 @click.option('--ignore_pos', '-i', type=list, default=[], multiple=True, help="list of positions that are ignored in the genotype, e.g. [0,1,149,150]")
+@click.option('--match', type=float, default=2., help="match parameter of the aligner")
+@click.option('--mismatch', type=float, default=-1., help="mismatch parameter of the aligner")
+@click.option('--gap_open', type=float, default=-1., help="gap_open parameter of the aligner")
+@click.option('--gap_extend', type=float, default=-.5, help="gap_extend parameter of the aligner")
 @click.option('--reads_per_umi_thr', '-r', type=int, default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads")
 @click.option('--save_umi_data','-s', default=None, help="path to a csv file to save the details of the genotypes reads for each UMI. If None the data isn't saved.")
 @click.option('--output', '-o', default="genotypes.csv", help="output file path")
-def genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_per_umi_thr, save_umi_data, output):
+def genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, match, mismatch, gap_open, gap_extend, reads_per_umi_thr, save_umi_data, output):
     ref=next(SeqIO.parse(ref,"fasta"))
     ref_seq=str(ref.seq)
     gen_list = get_genotypes(fastq, ref_seq, 
                              umi_size=umi_size, 
                              quality_threshold=quality_threshold, 
                              ignore_pos=ignore_pos,
+                             match=match,
+                             mismatch=mismatch,
+                             gap_open=gap_open,
+                             gap_extend=gap_extend,
                              reads_per_umi_thr=reads_per_umi_thr,
                              save_umi_data=save_umi_data)
     
@@ -67,6 +75,10 @@ def genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_per_umi
               help="Threshold value used to filter out reads of poor average quality (default: 30)")
 @click.option('--ignore_pos', '-i', type=list, default=[], multiple=True,
               help="List of positions that are ignored in the genotype (default: [])")
+@click.option('--match', type=float, default=2., help="match parameter of the aligner")
+@click.option('--mismatch', type=float, default=-1., help="mismatch parameter of the aligner")
+@click.option('--gap_open', type=float, default=-1., help="gap_open parameter of the aligner")
+@click.option('--gap_extend', type=float, default=-.5, help="gap_extend parameter of the aligner")
 @click.option('--reads_per_umi_thr', '-r', type=int, default=0,
               help="Minimum number of reads required to take a UMI into account (default: 0).\
                   Using a number >2 enables to perform error correction for UMIs with multiple reads")
@@ -74,7 +86,7 @@ def genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, reads_per_umi
               help="Path to a csv file to save the details of the genotypes reads for each UMI. If None the data isn't saved (default: None)")
 @click.option('-n', type=int, default=None, help="Number of reads to use. If None all the reads are used (default: None)")
 @click.option('--output', '-o', default="genotypes.csv", help="Output file path")
-def genotypes_paired(fastq_fwd, fastq_rev, ref, fwd_span, rev_span, require_perfect_pair_agreement, umi_size_fwd, umi_size_rev, quality_threshold, ignore_pos, reads_per_umi_thr, save_umi_data, n, output):
+def genotypes_paired(fastq_fwd, fastq_rev, ref, fwd_span, rev_span, require_perfect_pair_agreement, umi_size_fwd, umi_size_rev, quality_threshold, ignore_pos, match, mismatch, gap_open, gap_extend, reads_per_umi_thr, save_umi_data, n, output):
   """Calls dgrec.genotypes_paired.get_genotypes_paired
   """
   ref=next(SeqIO.parse(ref,"fasta"))
@@ -87,6 +99,10 @@ def genotypes_paired(fastq_fwd, fastq_rev, ref, fwd_span, rev_span, require_perf
                                    umi_size_rev=umi_size_rev,
                                    quality_threshold=quality_threshold, 
                                    ignore_pos=ignore_pos,
+                                   match=match,
+                                   mismatch=mismatch,
+                                   gap_open=gap_open,
+                                   gap_extend=gap_extend,
                                    reads_per_umi_thr=reads_per_umi_thr,
                                    save_umi_data=save_umi_data,
                                    N=n)

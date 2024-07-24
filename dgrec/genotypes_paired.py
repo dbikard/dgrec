@@ -28,8 +28,18 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                             quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality. Both reads have to pass the threshold.
                             ignore_pos: list = [], #list of positions that are ignored in the genotype
                             N = None, #number of reads to consider (useful to get a quick view of the data without going through the whole fastq files). If None the whole data will be used.
+                            **kwargs, #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                             ) -> dict:
+
+    align_param={"match":2,
+                "mismatch":-1, 
+                "gap_open":-1, 
+                "gap_extend":-.5,
+                }
     
+    for arg in kwargs:
+        if arg in align_param:
+            align_param[arg]=kwargs[arg]
 
     fwd_span = sorted(fwd_span)
     rev_span = sorted(rev_span)
@@ -86,10 +96,13 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                     if rev_span[1]-rev_span[0]>0:
                         consensus+=rev_seq
                         
-                    mutations=get_mutations(ref_seq[fwd_span[0]:fwd_span[1]]+ref_seq[rev_span[0]:rev_span[1]],consensus)
+                    mutations=get_mutations(ref_seq[fwd_span[0]:fwd_span[1]]+ref_seq[rev_span[0]:rev_span[1]], 
+                                            consensus, 
+                                            **align_param)
 
                 if ignore_pos:
                     mutations = [m for m in mutations if m[1] not in ignore_pos]
+                    
                 n_mut=len(mutations)
                 if n_mut<15: #more than 10 mutation is almost certainly crap
                     n_reads_aligned+=1
@@ -122,6 +135,7 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                         reads_per_umi_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
                         save_umi_data: str = None, #path to the csv file where to save the details of the genotypes reads for each UMI. If None the data isn't saved.
                         N = None, #number of reads to consider (useful to get a quick view of the data without going through the whole fastq files). If None the whole data will be used.
+                        **kwargs, #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                         ):
     """Putting things together in a single wrapper function that takes the fastq as input and returns the list of genotypes."""
     UMI_dict = get_UMI_genotype_paired(fastq_path_fwd, 
@@ -134,7 +148,8 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                                          umi_size_rev=umi_size_rev,
                                          quality_threshold=quality_threshold,
                                          ignore_pos=ignore_pos,
-                                         N=N
+                                         N=N,
+                                         **kwargs
                                          )
     if save_umi_data:
         with open(save_umi_data,"w", newline='') as handle: 

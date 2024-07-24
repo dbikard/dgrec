@@ -21,7 +21,7 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
                      umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
                      quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                      ignore_pos: list = [], #list of positions that are ignored in the genotype
-                     **kwargs
+                     **kwargs #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                      ) -> dict:
     
     """Takes as input a fastq_file of single read amplicon sequencing, and a reference amplicon sequence.
