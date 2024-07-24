@@ -1,4 +1,4 @@
-__version__ = "0.0.9"
+__version__ = "0.0.10"
 
 from .example_data import get_example_data_dir
 from .genotypes import get_genotypes
