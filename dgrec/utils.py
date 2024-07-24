@@ -41,11 +41,11 @@ def mut_rix(mutations):
     return res_rix
 
 # %% ../nbs/API/07_utils.ipynb 7
-def get_mutations(seqA,seqB):
+def get_mutations(seqA,seqB, match=2, mismatch=-1, gap_open=-1, gap_extend=-.5):
     """Aligns two sequences and returns a genotype string.
     The string is a comma separated list of mutations.
     """
-    align=pairwise2.align.globalms(seqA,seqB, 2, -1, -1, -.5, one_alignment_only=True)[0]
+    align=pairwise2.align.globalms(seqA,seqB, match, mismatch, gap_open, gap_extend, one_alignment_only=True)[0]
     mutations=align2mut(align) 
     mutations=mut_rix(mutations)
     return mutations

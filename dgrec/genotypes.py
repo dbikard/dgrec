@@ -21,11 +21,22 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
                      umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
                      quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                      ignore_pos: list = [], #list of positions that are ignored in the genotype
+                     **kwargs
                      ) -> dict:
     
     """Takes as input a fastq_file of single read amplicon sequencing, and a reference amplicon sequence.
        Returns a dictionnary containing as keys UMIs and as values a Counter of all genotype strings read for that UMI.
     """
+    align_param={"match":2,
+                 "mismatch":-1, 
+                 "gap_open":-1, 
+                 "gap_extend":-.5,
+                 }
+    
+    for arg in kwargs:
+        if arg in align_param:
+            align_param[arg]=kwargs[arg]
+
     with gz.open(fastq_path,'rt') as handle:
         reads=SeqIO.parse(handle,"fastq")
         n_reads=0
@@ -39,7 +50,7 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
             if meanScore>quality_threshold:
                 n_reads_pass_Qfilter+=1
                 umi=str(r.seq[:umi_size])
-                mutations=get_mutations(ref_seq,r.seq[umi_size:])
+                mutations=get_mutations(ref_seq,r.seq[umi_size:], **align_param)
                 if ignore_pos:
                     mutations = [m for m in mutations if m[1] not in ignore_pos]
                 n_mut=len(mutations)
@@ -92,9 +103,10 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
                     ignore_pos: list = [], #list of positions that are ignored in the genotype
                     reads_per_umi_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
                     save_umi_data: str = None, #path to the csv file where to save the details of the genotypes reads for each UMI. If None the data isn't saved.
+                    **kwargs, #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                     ):
     """Putting things together in a single wrapper function that takes the fastq as input and returns the list of genotypes."""
-    UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, quality_threshold, ignore_pos)
+    UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, quality_threshold, ignore_pos, **kwargs)
     if save_umi_data:
         with open(save_umi_data,"w", newline='') as handle: 
             csv_writer = csv.writer(handle,delimiter="\t",doublequote=False)
