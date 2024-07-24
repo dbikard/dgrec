@@ -163,7 +163,7 @@ def pickle_load(file_name_in):
 
 # %% ../nbs/API/07_utils.ipynb 34
 def reverse_complement(sequence):
-    complement_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
+    complement_dict = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'N'}
     reverse_sequence = sequence[::-1]
     reverse_complement_sequence = ''.join(complement_dict[base] for base in reverse_sequence)
     return reverse_complement_sequence
@@ -220,7 +220,7 @@ def make_dgr_oligos(target:str #TR DNA
 # %% ../nbs/API/07_utils.ipynb 37
 def reverse_complement(dna):
     # Dictionary to hold the complement of each base
-    complement = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C','-': '-'}
+    complement = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C','-': '-','N': 'N'}
     
     # Reverse the DNA string
     reversed_dna = dna[::-1]
@@ -237,7 +237,7 @@ def reverse_comp_geno_list(geno_list:list # List of genotypes
                            ,ref_seq:str #string of the template sequence
                            ):
     l=len(ref_seq)
-    geno_list_rev=[]
+    gene_rev_dic={}
     for geno in geno_list:
         if geno[0]!='':
             mut_list=geno[0].split(',')
@@ -249,9 +249,16 @@ def reverse_comp_geno_list(geno_list:list # List of genotypes
                 position=int(mut[1:-1])
                 rev_mut=reverse_complement(old_base)+str(l-position-1)+reverse_complement(new_base)
                 rev_mut_list.append((rev_mut))
-            geno_list_rev.append((','.join(rev_mut_list),umi_count))
+            revgen=','.join(rev_mut_list[::-1])
+            if revgen in gene_rev_dic:
+                gene_rev_dic[revgen]+=umi_count
+            else:
+                gene_rev_dic[revgen]=umi_count
+
         else:
-            geno_list_rev.append(geno)
+            gene_rev_dic['']=geno[1]
+
+    geno_list_rev = list(gene_rev_dic.items())
     return geno_list_rev
 
 
