@@ -12,24 +12,29 @@ import matplotlib.pyplot as plt
 
 # %% ../nbs/API/03_analysis.ipynb 4
 bases=list("ATGC")
-def mut_rate(gen_list, #a genotype list with the number of molecules detected
-             ran, #the position range in which to compute the mutation rate. If None the rate is computed for the full sequence.
-             ref_seq, #reference sequence
-             base_restriction = ["A","T","G","C"], #computes the mutation rate only at the base specified
+def mut_rate(gen_list:list, #a genotype list with the number of molecules detected
+             ran:tuple, #the position range in which to compute the mutation rate. If None the rate is computed for the full sequence.
+             ref_seq:str, #reference sequence
              ):
     """Computes the mutation rate per base within the specified range. The rate can be computed for specific bases using the base_restriction argument."""
-    nWT=gen_list[0][1]
-    base_counts=dict([(b,ref_seq[ran.start:ran.stop].count(b)) for b in bases])
-    nbases=sum([base_counts[b] for b in base_restriction])
-    assert(nbases>0)
+    mut_pileup=np.zeros(len(ref_seq))
+    nTOT = 0
+    for g, n in gen_list:
+        nTOT += n
+        gens = str_to_mut(g)
+        for m in gens:
+            mut_pileup[m[1]]+=n
 
-    nmut=0
-    for g,n in gen_list:
-        gens=str_to_mut(g)
-        mutpos_in_range=np.array([gen[1] in ran for gen in gens if ref_seq[gen[1]] in base_restriction])
-        if mutpos_in_range.any():
-            nmut+=n
+    mut_pileup=mut_pileup/nTOT
 
-    return (nmut/nWT)/nbases
+    mut_n_per_base={}
+    for b in bases:
+        b_pos= np.where((np.array(list(ref_seq))==b) & 
+                (np.arange(len(ref_seq))>ran[0]) & 
+                (np.arange(len(ref_seq))<ran[1]))
+        mut_n_per_base[b]=mut_pileup[b_pos].mean()
 
+    mut_n_per_base["all"]=mut_pileup[ran[0]:ran[1]].mean()
+
+    return mut_n_per_base
         
