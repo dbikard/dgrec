@@ -165,11 +165,12 @@ def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
     amino_mut_dic={}
     for gen, n in gen_list:
         if "-" not in gen: #excludes insertion or deletions as they will lead to frameshifts
-            mut=get_prot_mut(gen, refseq, frame=frame, ori=ori)
-            if mut in amino_mut_dic:
-                amino_mut_dic[mut]+=n
-            else:
-                amino_mut_dic[mut]=n
+            if "N" not in gen:  #exclue Ns
+                mut=get_prot_mut(gen, refseq, frame=frame, ori=ori)
+                if mut in amino_mut_dic:
+                    amino_mut_dic[mut]+=n
+                else:
+                    amino_mut_dic[mut]=n
     aa_mut_list=list(amino_mut_dic.items())
     aa_mut_list=sorted(aa_mut_list,key=lambda x: x[1],reverse=True)
     return aa_mut_list
