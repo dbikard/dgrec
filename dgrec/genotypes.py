@@ -19,6 +19,7 @@ from .utils import get_mutations, mut_to_str
 def get_UMI_genotype(fastq_path: str, #path to the input fastq file
                      ref_seq: str, #sequence of the reference amplicon
                      umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
+                     ref_read_size: int = None, #number of nucleotides in the read expected to align to the ref_seq. If None the whole read will be used.
                      quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                      ignore_pos: list = [], #list of positions that are ignored in the genotype
                      **kwargs #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
@@ -37,6 +38,8 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
         if arg in align_param:
             align_param[arg]=kwargs[arg]
 
+
+
     with gz.open(fastq_path,'rt') as handle:
         reads=SeqIO.parse(handle,"fastq")
         n_reads=0
@@ -50,7 +53,11 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
             if meanScore>quality_threshold:
                 n_reads_pass_Qfilter+=1
                 umi=str(r.seq[:umi_size])
-                mutations=get_mutations(ref_seq,r.seq[umi_size:], **align_param)
+                if ref_read_size!=None:
+                    mutations=get_mutations(ref_seq,r.seq[umi_size:umi_size+ref_read_size], **align_param)
+                else:
+                    mutations=get_mutations(ref_seq,r.seq[umi_size:], **align_param)
+
                 if ignore_pos:
                     mutations = [m for m in mutations if m[1] not in ignore_pos]
                 n_mut=len(mutations)
@@ -99,6 +106,7 @@ def genotype_UMI_counter(UMI_gen_dict):
 def get_genotypes(fastq_path: str, #path to the input fastq file
                     ref_seq: str, #sequence of the reference amplicon
                     umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
+                    ref_read_size: int = None, #number of nucleotides in the read expected to align to the ref_seq. If None the whole read will be used.
                     quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                     ignore_pos: list = [], #list of positions that are ignored in the genotype
                     reads_per_umi_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
@@ -106,7 +114,7 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
                     **kwargs, #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                     ):
     """Putting things together in a single wrapper function that takes the fastq as input and returns the list of genotypes."""
-    UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, quality_threshold, ignore_pos, **kwargs)
+    UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, ref_read_size, quality_threshold, ignore_pos, **kwargs)
     if save_umi_data:
         with open(save_umi_data,"w", newline='') as handle: 
             csv_writer = csv.writer(handle,delimiter="\t",doublequote=False)

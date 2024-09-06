@@ -22,6 +22,8 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                             ref_seq: str, #sequence of the reference amplicon
                             fwd_span: tuple, #span of the ref_seq that is read in the forward orientation format: (start, end)
                             rev_span: tuple, #span of the ref_seq that is read in the reverse orientation format: (start, end)
+                            fwd_ref_read_size: int = None, #number of nucleotides in the fwd read expected to align to the ref_seq. If None the whole read will be used.
+                            rev_ref_read_size: int = None, #number of nucleotides in the rev read expected to align to the ref_seq. If None the whole read will be used.
                             require_perfect_pair_agreement: bool = True, #if True only pairs of reads that perfectly agree on the sequence within the common span will be used. If False the fwd sequence will be used. Will be set to False by default if there is no overlap.
                             umi_size_fwd: int = 10, #number of nucleotides at the begining of the fwd read that will be used as the UMI
                             umi_size_rev: int = 0, #number of nucleotides at the begining of the rev read that will be used as the UMI (if both are provided the umi will be the concatenation of both)
@@ -75,8 +77,15 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                 umi2=str(r2.seq[:umi_size_rev])
                 umi=umi1+umi2
 
-                fwd_seq=r1.seq[umi_size_fwd:]
-                rev_seq=r2.seq[umi_size_rev:].reverse_complement()
+                if fwd_ref_read_size:
+                    fwd_seq=r1.seq[umi_size_fwd:umi_size_fwd+fwd_ref_read_size]
+                else:
+                    fwd_seq=r1.seq[umi_size_fwd:]
+                
+                if rev_ref_read_size:
+                    rev_seq=r2.seq[umi_size_rev:umi_size_rev+rev_ref_read_size].reverse_complement()
+                else:
+                    rev_seq=r2.seq[umi_size_rev:].reverse_complement()
 
                 if overlap:
                     fwd_common_seq=str(fwd_seq[rev_span[0]:fwd_span[1]])
@@ -127,6 +136,8 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                         ref_seq: str, #sequence of the reference amplicon
                         fwd_span: tuple, #span of the ref_seq that is read in the forward orientation format: (start, end)
                         rev_span: tuple, #span of the ref_seq that is read in the reverse orientation format: (start, end)
+                        fwd_ref_read_size: int = None, #number of nucleotides in the fwd read expected to align to the ref_seq. If None the whole read will be used.
+                        rev_ref_read_size: int = None, #number of nucleotides in the rev read expected to align to the ref_seq. If None the whole read will be used.
                         require_perfect_pair_agreement: bool = True, #if True only pairs of reads that perfectly agree on the sequence within the common span will be used. If False the fwd sequence will be used. Will be set to False by default if there is no overlap.
                         umi_size_fwd: int = 10, #number of nucleotides at the begining of the fwd read that will be used as the UMI
                         umi_size_rev: int = 0, #number of nucleotides at the begining of the rev read that will be used as the UMI (if both are provided the umi will be the concatenation of both)
@@ -143,6 +154,8 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                                          ref_seq, 
                                          fwd_span=fwd_span, 
                                          rev_span=rev_span,
+                                         fwd_ref_read_size=fwd_ref_read_size,
+                                         rev_ref_read_size=rev_ref_read_size,
                                          require_perfect_pair_agreement=require_perfect_pair_agreement,
                                          umi_size_fwd=umi_size_fwd,
                                          umi_size_rev=umi_size_rev,
