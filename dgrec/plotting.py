@@ -25,6 +25,7 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
                    sample_name: str = None,  #sample name
                    plot_range: Union[tuple,list] = None,  #limits the plot to the specified range
                    TR_range: Union[tuple,list] = None, #when specified creates a shaded box highlighting the position of the TR
+                   ax=None, #makes it possible to pass matplotlib axis to easily configure and save plots
                    ):
     
     if not plot_range:
@@ -56,7 +57,8 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
 
     labels=np.array(range(L))
 
-    fig, ax = plt.subplots(1,1,figsize=(20, 5))
+    if ax==None: #if no axes are passed then create a new figure
+        fig, ax = plt.subplots(1,1,figsize=(20, 5)) 
 
     y=sum(mut_arrays.values())
     colors=["orange","red","green","blue","grey","black"]
@@ -83,7 +85,9 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
                    sample_name: str = None,  #sample name
                    plot_range: Union[tuple,list] = None,  #limits the plot to the specified range
                    TR_range: Union[tuple,list] = None, #when specified creates a shaded box highlighting the position of the TR
-                   rev_comp=False):
+                   rev_comp=False,
+                   ax=None, #makes it possible to pass matplotlib axis to easily configure and save plots
+                   ):
     
     if rev_comp==True:
         gen_list=reverse_comp_geno_list(gen_list,ref_seq)
@@ -126,7 +130,8 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
 
     labels=np.array(range(L))
 
-    fig, ax = plt.subplots(1,1,figsize=(20, 5))
+    if ax==None: #if no axes are passed then create a new figure
+        fig, ax = plt.subplots(1,1,figsize=(20, 5))
 
     y=sum(mut_arrays.values())
     colors=["orange","red","green","blue","grey","black"]
