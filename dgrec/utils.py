@@ -111,6 +111,7 @@ def genstr_to_seq(genstr,refseq):
 
 # %% ../nbs/API/07_utils.ipynb 23
 def reverse_complement(dna):
+    dna=dna.upper()
     # Dictionary to hold the complement of each base
     complement = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C','-': '-','N': 'N'}
     

@@ -90,11 +90,11 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                 if overlap:
                     fwd_common_seq=str(fwd_seq[rev_span[0]:fwd_span[1]])
                     rev_common_seq=str(rev_seq[:overlap_size])
-                    if require_perfect_pair_agreement:
-                        if fwd_common_seq==rev_common_seq:
-                            n_reads_agree+=1
-                        else:
-                            continue
+                    
+                    if fwd_common_seq==rev_common_seq:
+                        n_reads_agree+=1
+                    elif require_perfect_pair_agreement:
+                        continue
                         
                     consensus=fwd_seq+rev_seq[overlap_size:]
                     mutations=get_mutations(ref_seq[fwd_span[0]:rev_span[1]],consensus)
