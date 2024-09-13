@@ -167,7 +167,7 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
     if save_umi_data:
         with open(save_umi_data,"w", newline='') as handle: 
             csv_writer = csv.writer(handle,delimiter="\t",doublequote=False)
-            for umi in itertools.islice(UMI_dict,20):
+            for umi in UMI_dict:
                 csv_writer.writerow([umi,list(UMI_dict[umi].items())])
 
     UMI_gen_dict=correct_UMI_genotypes(UMI_dict, reads_per_umi_thr)
