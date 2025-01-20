@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from .example_data import get_example_data_dir
 import os
+import dgrec.encoding
 
 
 # %% ../nbs/API/05_predictions.ipynb 4
