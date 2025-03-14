@@ -4,7 +4,7 @@
 __all__ = ['align2mut', 'mut_rix', 'get_mutations', 'get_mutations_noalign', 'mut_to_str', 'str_to_mut', 'genstr_to_seq',
            'reverse_complement', 'get_prot_mut', 'parse_genotypes', 'get_aa_mut_list', 'downsample_fastq_gz',
            'get_basename_without_extension', 'pickle_save', 'pickle_load', 'make_dgr_oligos', 'reverse_comp_geno_list',
-           'remove_position', 'remove_position_list']
+           'remove_position', 'remove_position_list', 'save_alignment_to_svg']
 
 # %% ../nbs/API/07_utils.ipynb 2
 import gzip
@@ -16,6 +16,11 @@ from .pairwise2 import format_alignment
 from Bio.Align import PairwiseAligner
 from Bio.Seq import Seq
 from Bio import SeqIO
+from typing import List, Optional
+import svgwrite
+from Bio import pairwise2
+from Bio.Seq import Seq
+from Bio.Data import CodonTable
 
 # %% ../nbs/API/07_utils.ipynb 3
 def align2mut(align):
@@ -328,3 +333,103 @@ def remove_position_list(geno_list,pos_list):
             new_geno_k=geno_k
             new_geno_list.append((new_geno_k,count_k))
     return new_geno_list
+
+# %% ../nbs/API/07_utils.ipynb 48
+def save_alignment_to_svg(
+    reference: str, #The reference DNA sequence
+    sequences: List[str], #A list of mutated DNA sequences
+    labels: Optional[List[str]] = None, #Labels for the mutated sequences. Defaults to "Mutated X"
+    filename: str = "alignment.svg" #Output SVG file name. Defaults to alignement.svg
+) -> None:
+    """
+    Saves DNA and amino acid sequence alignments to an SVG file.
+    
+    - Aligns input sequences to a reference (both at DNA and protein levels).
+    - Highlights mismatches and codon structures.
+    - Colors bases and amino acids by biochemical properties.
+    """
+    if labels is None:
+        labels = [f"Mutated {i+1}" for i in range(len(sequences))]
+    
+    # Translate DNA to amino acids
+    ref_aa = translate_dna(reference)
+    seqs_aa = [translate_dna(seq) for seq in sequences]
+    
+    # Perform pairwise alignments (DNA and protein levels)
+    alignments = [pairwise2.align.localms(reference, seq, 2, 0, -3, -2, one_alignment_only=True)[0] for seq in sequences]
+    aa_alignments = [pairwise2.align.localms(ref_aa, seq_aa, 2, 0, -2, -1, one_alignment_only=True)[0] for seq_aa in seqs_aa]
+    
+    # SVG drawing settings
+    dwg = svgwrite.Drawing(filename, profile='tiny', size=(len(reference) * 17 + 160, 70 + len(sequences) * 40))
+    font_size, line_spacing = 14, 20
+    codon_spacing, aa_spacing = 15, 45
+    x_start, y_start = 10, 30
+    
+    # Define color mappings
+    base_colors = {"A": "#FF9999", "T": "#99FF99", "G": "#FFFF99", "C": "#99FFFF", '-': '#FFFFFF'}
+    aa_colors = {"A": "#6693BA", "I": "#6693BA", "L": "#6693BA", "V": "#6693BA", "P": "#6693BA", "G": "#6693BA",
+                 "F": "#AB88A9", "W": "#AB88A9", "Y": "#AB88A9", "D": "#D2A392", "E": "#D2A392", "H": "#E0C08B",
+                 "K": "#E0C08B", "R": "#E0C08B", "S": "#6DABA9", "T": "#6DABA9", "C": "#6DABA9", "M": "#6DABA9",
+                 "N": "#6DABA9", "Q": "#6DABA9", "-": "#FFFFFF", "*": "#BB888C"}
+    
+    def add_colored_text(dwg, text, x, y, color="black", bgcolor=None):
+        """Adds colored rectangles with text to the SVG."""
+        if bgcolor:
+            dwg.add(dwg.rect(insert=(x-2, y-14), size=(12, 18), fill=bgcolor, stroke="none"))
+        dwg.add(dwg.text(text, insert=(x, y), font_size=font_size, fill=color, font_family="Courier"))
+    
+    # DNA Alignment Section
+    y_offset = y_start
+    ref_aligned, *_ = alignments[0]
+    x_offset = x_start
+    add_colored_text(dwg, "Reference:", x_offset, y_offset)
+    x_offset += 150
+    codon_positions = []
+    
+    for i, base in enumerate(ref_aligned):
+        bgcolor = base_colors.get(base, None)
+        add_colored_text(dwg, base, x_offset, y_offset, bgcolor=bgcolor)
+        x_offset += codon_spacing
+        if (i+1) % 3 == 0:
+            x_offset += 5
+            codon_positions.append(x_offset - codon_spacing)
+    y_offset += line_spacing
+    
+    # Amino Acid Reference Alignment
+    ref_aa_aligned, *_ = aa_alignments[0]
+    x_offset = x_start
+    add_colored_text(dwg, "AA Ref:", x_offset, y_offset)
+    x_offset += 150
+    for j, aa in enumerate(ref_aa_aligned):
+        add_colored_text(dwg, aa, codon_positions[j]-20, y_offset, bgcolor=aa_colors.get(aa, "#FFFFFF"))
+    y_offset += line_spacing
+    
+    # Process Each Mutated Sequence
+    for i, (alignment, label) in enumerate(zip(alignments, labels)):
+        ref_seq, seq_aligned, *_ = alignment
+        x_offset = x_start
+        add_colored_text(dwg, f"{label}:", x_offset, y_offset)
+        x_offset += 150
+        
+        count = 0
+        for ref_base, seq_base in zip(ref_aligned, seq_aligned):
+            bgcolor = base_colors.get(seq_base, None) if ref_base != seq_base and seq_base != "-" else "#FFFFFF"
+            add_colored_text(dwg, seq_base, x_offset, y_offset, bgcolor=bgcolor)
+            x_offset += codon_spacing
+            if (count+1) % 3 == 0:
+                x_offset += 5
+            count += 1
+        y_offset += line_spacing
+        
+        # Amino Acid Alignment for Mutated Sequence
+        ref_aa_seq, aa_seq_aligned, *_ = aa_alignments[i]
+        x_offset = x_start + 150
+        
+        for j, (ref_aa, seq_aa) in enumerate(zip(ref_aa_aligned, aa_seq_aligned)):
+            bgcolor = aa_colors.get(seq_aa, None) if ref_aa != seq_aa and seq_aa != "-" else "#FFFFFF"
+            add_colored_text(dwg, seq_aa, codon_positions[j]-20, y_offset, bgcolor=bgcolor)
+        y_offset += line_spacing
+    
+    # Save to file
+    dwg.save()
+    print(f"Alignment saved to {filename}")

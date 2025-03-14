@@ -67,4 +67,5 @@ d = { 'settings': { 'branch': 'main',
                              'dgrec.utils.remove_position_list': ('API/utils.html#remove_position_list', 'dgrec/utils.py'),
                              'dgrec.utils.reverse_comp_geno_list': ('API/utils.html#reverse_comp_geno_list', 'dgrec/utils.py'),
                              'dgrec.utils.reverse_complement': ('API/utils.html#reverse_complement', 'dgrec/utils.py'),
+                             'dgrec.utils.save_alignment_to_svg': ('API/utils.html#save_alignment_to_svg', 'dgrec/utils.py'),
                              'dgrec.utils.str_to_mut': ('API/utils.html#str_to_mut', 'dgrec/utils.py')}}}
