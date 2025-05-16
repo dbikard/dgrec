@@ -6,3 +6,4 @@ from .genotypes_paired import get_genotypes_paired
 from .plotting import plot_mutations
 #from .encoding import encode_tr_list
 from .predictions import score,score_list
+from . import analysis, utils
