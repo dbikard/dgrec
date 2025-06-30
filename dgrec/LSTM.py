@@ -162,7 +162,7 @@ def sequences_same_length(sequences):
 
 
 # %% ../nbs/API/09_likelihood_LSTM.ipynb 6
-def generate_sequences(X_seq): #X _seq is a list of sequences ATCG sequences (faster if same length)
+def generate_sequences(X_seq): #X_seq is a list of sequences ATCG sequences (faster if same length)
     """
     Generate list of VR from list of TR (one TR-> one VR).
     Parameters:
