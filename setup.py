@@ -45,7 +45,7 @@ setuptools.setup(
     packages = setuptools.find_packages(),
     ext_modules=EXTENSIONS,
     include_package_data = True,
-    package_data={"dgrec.example_data": ["*"],  # Include all files in example_data
+    package_data={"dgrec.example_data": ["*"]},  # Include all files in example_data
     install_requires = requirements,
     extras_require={ 'dev': dev_requirements },
     dependency_links = cfg.get('dep_links','').split(),
