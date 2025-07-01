@@ -19,7 +19,7 @@ from tensorflow.keras import layers, models
 from .example_data import get_example_data_dir
 
 # %% ../nbs/API/09_likelihood_LSTM.ipynb 3
-data_path='../../dgrec/example_data'#get_example_data_dir()
+data_path=get_example_data_dir() #'../../dgrec/example_data'
 os.listdir(data_path)
 
 # %% ../nbs/API/09_likelihood_LSTM.ipynb 4
