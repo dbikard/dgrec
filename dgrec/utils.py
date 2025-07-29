@@ -170,10 +170,10 @@ def get_prot_mut(genstr,refseq,frame=0,ori=1):
 
 
 # %% ../nbs/API/07_utils.ipynb 30
-def parse_genotypes(genotypes_file):
+def parse_genotypes(genotypes_file, delimiter='\t'):
     gen_list=[]
     with open(genotypes_file,"r") as handle: 
-        reader = csv.reader(handle, delimiter='\t')
+        reader = csv.reader(handle, delimiter=delimiter)
         for row in reader:
             gen_list.append((row[0],int(row[1])))
     return gen_list
