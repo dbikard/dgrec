@@ -141,7 +141,6 @@ def reverse_complement(dna):
     return reverse_complement_dna
 
 
-
 # %% ../nbs/API/07_utils.ipynb 26
 def get_prot_mut(genstr,refseq,frame=0,ori=1):
     mut_seq=genstr_to_seq(genstr,refseq)
@@ -167,7 +166,6 @@ def get_prot_mut(genstr,refseq,frame=0,ori=1):
     mut_prot=mut_prot[:L]
     ref_prot=ref_prot[:L]
     return mut_to_str(get_mutations_noalign(ref_prot,mut_prot))
-
 
 # %% ../nbs/API/07_utils.ipynb 30
 def parse_genotypes(genotypes_file, delimiter='\t',ref_sequence=False):
@@ -199,7 +197,6 @@ def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
     aa_mut_list=list(amino_mut_dic.items())
     aa_mut_list=sorted(aa_mut_list,key=lambda x: x[1],reverse=True)
     return aa_mut_list
-
 
 # %% ../nbs/API/07_utils.ipynb 35
 def downsample_fastq_gz(input_file, output_file, num_reads=10000):
@@ -242,7 +239,6 @@ def pickle_save(data_in,file_name_out):
     pickle.dump(data_in, pickle_out)
     pickle_out.close()
     
-
 
 # %% ../nbs/API/07_utils.ipynb 42
 def pickle_load(file_name_in):
@@ -327,7 +323,6 @@ def reverse_comp_geno_list(geno_list:list # List of genotypes
     geno_list_rev = list(gene_rev_dic.items())
     return geno_list_rev
 
-
 # %% ../nbs/API/07_utils.ipynb 46
 def remove_position(geno,pos_list):
     mut_split=geno.split(',')
@@ -336,7 +331,6 @@ def remove_position(geno,pos_list):
         if int(mut[1:-1]) not in pos_list:
             new_geno.append(mut)
     return ','.join(new_geno)
-
 
 
 # %% ../nbs/API/07_utils.ipynb 47
