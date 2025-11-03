@@ -19,7 +19,6 @@ from scipy.integrate import quad
 
 import matplotlib.pyplot as plt
 
-
 # %% ../nbs/API/03_analysis.ipynb 4
 bases=list("ATGC")
 def mut_rate(gen_list:list, #a genotype list with the number of molecules detected
@@ -81,10 +80,8 @@ def _fit_linear_on_log_data(x_data, y_data, show_plot=True, base=np.e):
         plt.yscale('log')
         plt.grid(True, which="both", ls="--", alpha=0.7)
         plt.legend()
-        plt.show()
         
     return a, slope
-
 
 # %% ../nbs/API/03_analysis.ipynb 9
 def find_power_law_breakpoint_KS(
@@ -209,7 +206,6 @@ def find_power_law_breakpoint_KS(
         print("Could not find a suitable breakpoint meeting all criteria.")
 
     return best_j_min_rank, best_alpha, min_D_statistic
-
 
 # %% ../nbs/API/03_analysis.ipynb 11
 def find_power_law_breakpoint_R(
@@ -544,7 +540,6 @@ def estimate_U_n_hybrid(
     #print(f"U_head: {u_head}, U_tail: {u_tail}, Total U(n_target): {u_head + u_tail}")
     return u_head + u_tail
 
-
 # %% ../nbs/API/03_analysis.ipynb 17
 def estimate_library_size(
     observed_counts: list,
@@ -629,4 +624,3 @@ def estimate_library_size(
         my_tail_params,
         G_approx_upper_limit=G
     )
-
