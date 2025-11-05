@@ -6,12 +6,12 @@ __all__ = ['data_path', 'model_name', 'model_path', 'model', 'score', 'score_lis
 # %% ../nbs/API/05_predictions.ipynb 2
 import pickle
 import sklearn
-import dgrec
 import numpy as np
 import pandas as pd
 from .example_data import get_example_data_dir
 from .model_parameters import get_model_parameters_dir
 import os
+from . import encoding
 
 # %% ../nbs/API/05_predictions.ipynb 3
 data_path=get_model_parameters_dir()
@@ -24,7 +24,7 @@ def score(TR_seq:str #A string of the TR DNA sequence
 ,model):
 
     """Calculates the predicted score of a given TR sequence (1 = perfect TR and 0 = crappy TR)"""
-    encoded_TR=dgrec.encoding.encode_tr_list([TR_seq])
+    encoded_TR=encoding.encode_tr_list([TR_seq])
     score=np.round(model.predict_proba([encoded_TR[0]])[:,1],decimals=2).item()
     return score
 
@@ -34,7 +34,7 @@ TR_name_list:list, #A list of strings of TRs names
 model):
     """Calculates the score for every TR in the list and returns them in a dataframe format"""
 
-    encoded_TR=dgrec.encoding.encode_tr_list(TR_seq_list)
+    encoded_TR=encoding.encode_tr_list(TR_seq_list)
     score=np.round(model.predict_proba(encoded_TR)[:,1],decimals=2)
     score_df=pd.DataFrame({
         'TR_Name':TR_name_list,
