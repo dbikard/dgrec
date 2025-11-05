@@ -8,9 +8,10 @@ website:
           - API/01_genotypes_paired.ipynb
           - API/02_plotting.ipynb
           - API/03_analysis.ipynb
+          - API/04_encoding.ipynb
+          - API/05_predictions.ipynb
           - API/07_utils.ipynb
           - API/08_cli.ipynb
-          - API/09_likelihood_LSTM.ipynb
       - section: DGRec data analysis
         contents:
           - DGRec data analysis/00_mutation_distribution.ipynb
