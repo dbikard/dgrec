@@ -3,14 +3,14 @@
 # %% auto 0
 __all__ = ['bases', 'mut_rate']
 
-# %% ../nbs/API/03_analysis.ipynb 2
+# %% ../nbs/API/03_analysis.ipynb 3
 from .utils import parse_genotypes, str_to_mut
 import os
 import numpy as np
 from Bio import SeqIO
 import matplotlib.pyplot as plt
 
-# %% ../nbs/API/03_analysis.ipynb 4
+# %% ../nbs/API/03_analysis.ipynb 5
 bases=list("ATGC")
 def mut_rate(gen_list:list, #a genotype list with the number of molecules detected
              ran:tuple, #the position range in which to compute the mutation rate. If None the rate is computed for the full sequence.

@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['data_path', 'model_name', 'model_path', 'model_Sp', 'score', 'score_list']
 
-# %% ../nbs/API/05_predictions.ipynb 2
+# %% ../nbs/API/05_predictions.ipynb 3
 import pickle
 import sklearn
 import numpy as np
@@ -13,25 +13,27 @@ from .model_parameters import get_model_parameters_dir
 import os
 from . import encoding
 
-# %% ../nbs/API/05_predictions.ipynb 3
+# %% ../nbs/API/05_predictions.ipynb 4
 data_path=get_model_parameters_dir()
 model_name='e_TRSp_classifier.pkl'
 model_path=os.path.join(data_path,model_name)
 model_Sp=pickle.load(open(model_path,"rb"))
 
-# %% ../nbs/API/05_predictions.ipynb 4
+# %% ../nbs/API/05_predictions.ipynb 5
 def score(TR_seq:str #A string of the TR DNA sequence
-,model=model_Sp):
+,model=model_Sp #The classifier model, no need to specify it
+         ):
 
     """Calculates the predicted score of a given TR sequence (1 = perfect TR and 0 = crappy TR)"""
     encoded_TR=encoding.encode_tr_list([TR_seq])
     score=np.round(model.predict_proba([encoded_TR[0]])[:,1],decimals=2).item()
     return score
 
-# %% ../nbs/API/05_predictions.ipynb 6
+# %% ../nbs/API/05_predictions.ipynb 7
 def score_list(TR_seq_list:list, #A list of strings of TRs DNA sequences
 TR_name_list:list, #A list of strings of TRs names
-model=model_Sp):
+model=model_Sp #The classifier model, no need to specify it
+              ):
     """Calculates the score for every TR in the list and returns them in a dataframe format"""
 
     encoded_TR=encoding.encode_tr_list(TR_seq_list)

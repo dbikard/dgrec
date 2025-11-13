@@ -3,12 +3,12 @@
 # %% auto 0
 __all__ = ['encode_tr_list']
 
-# %% ../nbs/API/04_encoding.ipynb 2
+# %% ../nbs/API/04_encoding.ipynb 3
 import ViennaRNA as RNA
 import numpy as np
 from tqdm import tqdm
 
-# %% ../nbs/API/04_encoding.ipynb 3
+# %% ../nbs/API/04_encoding.ipynb 4
 def encode_tr_list(list_TRs: list # A list of DNA sequences (strings) to encode.
                          ):
     """
