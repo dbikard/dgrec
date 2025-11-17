@@ -31,12 +31,12 @@ def encode_tr_list(list_TRs: list # A list of DNA sequences (strings) to encode.
         fc_sp = RNA.fold_compound(TR + Sp[:30])
         _, e_tr_sp = fc_sp.pf()
         features.append(e_tr_sp - e_tr)
-        new_features_encoded.append(features)
+        
         if feat==2:
             fc_avd_sp = RNA.fold_compound(Avd+TR + Sp[:15])
             _, e_avd_sp = fc_avd_sp.pf()
             features.append(e_avd_sp - e_tr)
-            new_features_encoded.append(features)
+        new_features_encoded.append(features)
 
     # Convert the list of encoded features into a NumPy array
     return np.array(new_features_encoded)

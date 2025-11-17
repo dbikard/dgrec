@@ -33,7 +33,7 @@ def score(TR_seq:str #A string of the TR DNA sequence
     if features == 1:
         score=np.round(model_Sp.predict_proba([encoded_TR[0]])[:,1],decimals=2).item()
     elif features==2:
-        score=[np.round(model_Sp.predict_proba([encoded_TR[0][0]])[:,1],decimals=2).item(),np.round(model_Avd_Sp.predict_proba([encoded_TR[0][1]])[:,1],decimals=2).item()]
+        score=[np.round(model_Sp.predict_proba([encoded_TR[0][:1]])[:,1],decimals=2).item(),np.round(model_Avd_Sp.predict_proba([encoded_TR[0][1:2]])[:,1],decimals=2).item()]
     return score
 
 # %% ../nbs/API/05_predictions.ipynb 7
