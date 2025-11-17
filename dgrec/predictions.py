@@ -86,6 +86,6 @@ TR_name_list:list, #A list of strings of TRs names
     rates=model_whole.predict(encoded_TR)
     score_df=pd.DataFrame({
         'TR_Name':TR_name_list,
-        'TR_Seq':rates
+        'TR_Seq':10**rates
     })
     return score_df
