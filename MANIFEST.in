@@ -3,5 +3,4 @@ include LICENSE
 include CONTRIBUTING.md
 include README.md
 recursive-include dgrec/example_data *
-recursive-include dgrec/model_parameters *
 recursive-exclude * __pycache__

@@ -9,12 +9,11 @@ import sklearn
 import numpy as np
 import pandas as pd
 from .example_data import get_example_data_dir
-from .model_parameters import get_model_parameters_dir
 import os
 from . import encoding
 
 # %% ../nbs/API/05_predictions.ipynb 4
-data_path=get_model_parameters_dir()
+data_path=get_example_data_dir()
 model_name='e_TRSp_classifier.pkl'
 model_path=os.path.join(data_path,model_name)
 model_Sp=pickle.load(open(model_path,"rb"))
