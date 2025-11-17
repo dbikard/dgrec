@@ -59,6 +59,6 @@ features=1 #The number of features to use
             'TR_Name':TR_name_list,
             'TR_Seq':TR_seq_list,
             'TR_Score_Sp':score_Sp,
-            'TR_Score_Avd':score_Avd
+            'TR_Score_Avd':score_Avd_Sp
         })
         return score_df
