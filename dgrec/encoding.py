@@ -10,9 +10,9 @@ from tqdm import tqdm
 
 # %% ../nbs/API/04_encoding.ipynb 4
 def encode_tr_list(list_TRs: list # A list of DNA sequences (strings) to encode.
-                         ):
+    ,feat=1                     ):
     """
-    Encodes a list of TR sequences.
+    Encodes a list of TR sequences. If feat is 1, uses only the single feature model, if 2 uses the 2 features model.
     """
     Avd='aagggcaggctgggaaATAA'.upper()
     Sp='tctgtgcccatcaccttcttgcatggctctgccaacgctacggcttggcgggctggcctttcctcaataggtggtcagccggttctgtcctgcttcggcgaacacgttacacggttcggcaaaacgtcgattactgaaaatggaaaggcggggccgacttc'.upper()
@@ -32,6 +32,11 @@ def encode_tr_list(list_TRs: list # A list of DNA sequences (strings) to encode.
         _, e_tr_sp = fc_sp.pf()
         features.append(e_tr_sp - e_tr)
         new_features_encoded.append(features)
+        if feat==2:
+            fc_avd_sp = RNA.fold_compound(Avd+TR + Sp[:15])
+            _, e_avd_sp = fc_avd_sp.pf()
+            features.append(e_avd_sp - e_tr)
+            new_features_encoded.append(features)
 
     # Convert the list of encoded features into a NumPy array
     return np.array(new_features_encoded)
