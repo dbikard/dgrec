@@ -32,7 +32,7 @@ def score(TR_seq:str #A string of the TR DNA sequence
 ,features=1 #The classifier model, no need to specify it (one feature by default). If two: uses the two features model
          ):
 
-    """Calculates the predicted score of a given TR sequence (1 = perfect TR and 0 = crappy TR)"""
+    """Calculates the predicted score of a given TR sequence (1 = perfect TR and 0 = crappy TR).  If features=2, returns the score according to each feature (better to have both high)."""
     encoded_TR=encoding.encode_tr_list([TR_seq],features)
     if features == 1:
         score=np.round(model_Sp.predict_proba([encoded_TR[0]])[:,1],decimals=2).item()
@@ -45,7 +45,7 @@ def score_list(TR_seq_list:list, #A list of strings of TRs DNA sequences
 TR_name_list:list, #A list of strings of TRs names
 features=1 #The number of features to use
               ):
-    """Calculates the score for every TR in the list and returns them in a dataframe format"""
+    """Calculates the score for every TR in the list and returns them in a dataframe format. If features=2, returns the score according to each feature (better to have both high)."""
 
     encoded_TR=encoding.encode_tr_list(TR_seq_list,features)
     if features==1:
