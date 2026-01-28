@@ -313,7 +313,7 @@ def optimize_sequence(
 
     This function performs a beam-search–based optimization of a nucleotide
     sequence by iteratively proposing single-codon synonymous changes and
-    evaluating them with two scoring functions. The search stops early if a
+    evaluating them with the two scoring functions. The search stops early if a
     variant meets the specified score thresholds, otherwise the best Pareto-
     optimal solution is returned.
 
@@ -334,7 +334,7 @@ def optimize_sequence(
         Minimum required value for both `Score_TRSp` and `Score_TRSpAvd` to
         accept a sequence as optimal.
     codon_usage : dict, optional
-        Codon usage table mapping amino acids to codons and frequencies.
+        Codon usage table of E. Coli mapping amino acids to codons and frequencies.
 
     Returns
     -------
@@ -345,9 +345,9 @@ def optimize_sequence(
         - `New_Variant` : str  
           Optimized DNA sequence.
         - `Score_TRSp` : float or None  
-          Specificity score of the selected variant.
+          TR+Sp score of the selected variant.
         - `Score_TRSpAvd` : float or None  
-          Avoidance score of the selected variant.
+          Avd+TR+Sp score of the selected variant.
 
     Notes
     -----
