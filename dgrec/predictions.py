@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 from .example_data import get_example_data_dir
 import RNA
-from concurrent.futures import ProcessPoolExecutor
 import os
 import matplotlib.pyplot as plt
 from . import encoding
@@ -176,7 +175,8 @@ AA_TO_CODONS = {
     '-': []                            # Gap (no codons)
 }
 
-def nt_to_codons(nt_sequence):
+def nt_to_codons(nt_sequence:str #A string corresponding to a nucleotide sequence
+                ):
     """
     Converts a nucleotide sequence into a list of codons.
     
@@ -194,7 +194,8 @@ def nt_to_codons(nt_sequence):
     
     return codons
 
-def codons_to_aa(codons):
+def codons_to_aa(codons:str #A list of strings corresponding to codons
+                ):
     """
     Converts a list of codons into a sequence of amino acids.
     
@@ -210,13 +211,29 @@ def codons_to_aa(codons):
         aa_sequence += CODON_TO_AA.get(codon, 'X')
     return aa_sequence
 
-def nt_prot(nt):
+def nt_prot(nt #A nucleotide sequence
+           ):
+    """
+    Converts a nucleotide into a sequence of amino acids.
+    
+    Args:
+        nt (str): A nucleotide sequence (DNA) string.
+        
+    Returns:
+        str: The translated amino acid sequence (e.g., 'M*A').
+    """
     return codons_to_aa(nt_to_codons(nt))
 
-def pareto_front(sequences):
+def pareto_front(sequences #Dataframe containing a sequence and its two scores
+                ):
     """
     Keep only Pareto-optimal sequences:
     no other sequence has both scores >= and at least one strictly greater.
+    Args:
+        sequences (DataFrame): A dataframe of sequences and their two scores.
+        
+    Returns:
+        pareto: the list of rows corresponding to pareto optima (no sequence with both scores higher).
     """
     pareto = []
     for s in sequences:
@@ -260,9 +277,11 @@ def evaluate_sequences(variants):
     Encode sequences, run classifiers, return list of dicts with scores.
     """
     seqs = [v for v in variants]
-    Scores=encoding.encode_tr_list(seqs,2)
-    Score_TRSp = [a for [a,b] in Scores]
-    Score_TRSpAvd = [b for [a,b] in Scores]
+    Scores=score_list(seqs, #A list of strings of TRs DNA sequences
+seqs, #A list of strings of TRs names
+features=2)
+    Score_TRSp = list(Scores['TR_Score_Sp'])
+    Score_TRSpAvd = list(Scores['TR_Score_Avd'])
     plt.figure(figsize=(6,6))
     plt.scatter(Score_TRSp, Score_TRSpAvd, alpha=0.7)
     plt.xlabel("Score_TRSp")
@@ -279,31 +298,106 @@ def evaluate_sequences(variants):
         })
     return results
 
-def optimize_sequence(original_seq, frame_offset=0,CHANGES=6,rank_max=2,forbidden_positions=[],threshold=0.7,codon_usage=codon_usage_ecoli):
+# %% ../nbs/API/05_predictions.ipynb 17
+def optimize_sequence(
+    original_seq: str,
+    frame_offset: int = 0,
+    CHANGES: int = 6,
+    rank_max: int = 2,
+    forbidden_positions: list[int] = [],
+    threshold: float = 0.7,
+    codon_usage: dict = codon_usage_ecoli
+):
     """
-    Run beam search until one good variant is found.
+    Optimize a DNA sequence via synonymous codon substitutions.
+
+    This function performs a beam-search–based optimization of a nucleotide
+    sequence by iteratively proposing single-codon synonymous changes and
+    evaluating them with two scoring functions. The search stops early if a
+    variant meets the specified score thresholds, otherwise the best Pareto-
+    optimal solution is returned.
+
+    Parameters
+    ----------
+    original_seq : str
+        Original DNA sequence to optimize.
+    frame_offset : int, default=0
+        Reading-frame offset (0, 1, or 2) used when grouping codons.
+    CHANGES : int, default=6
+        Maximum number of codon substitutions allowed.
+    rank_max : int, default=2
+        Number of top-ranked synonymous codons (by usage frequency) to consider
+        per amino acid.
+    forbidden_positions : list[int], optional
+        Nucleotide positions that must not be modified.
+    threshold : float, default=0.7
+        Minimum required value for both `Score_TRSp` and `Score_TRSpAvd` to
+        accept a sequence as optimal.
+    codon_usage : dict, optional
+        Codon usage table mapping amino acids to codons and frequencies.
+
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - `Original_Sequence` : str  
+          Input DNA sequence.
+        - `New_Variant` : str  
+          Optimized DNA sequence.
+        - `Score_TRSp` : float or None  
+          Specificity score of the selected variant.
+        - `Score_TRSpAvd` : float or None  
+          Avoidance score of the selected variant.
+
+    Notes
+    -----
+    - The algorithm keeps only Pareto-optimal candidates at each iteration.
+    - If no variant satisfies the threshold criteria, the best-scoring
+      sequence after `CHANGES` iterations is returned.
+    - Internal scoring and plotting are handled by `evaluate_sequences`.
+
+    Examples
+    --------
+    ```python
+    result = optimize_sequence("ATGGCTGCTTAA")
+    result["New_Variant"]
+    ```
     """
     beam = [original_seq]
-    evaluated=evaluate_sequences(beam)
-    good = [v for v in evaluated if v["Score_TRSp"] >= threshold and v["Score_TRSpAvd"] >= threshold]
+    evaluated = evaluate_sequences(beam)
+
+    good = [
+        v for v in evaluated
+        if v["Score_TRSp"] >= threshold and v["Score_TRSpAvd"] >= threshold
+    ]
     if good:
+        best = max(good, key=lambda x: x["Score_sum"])
         return {
             "Original_Sequence": original_seq,
-            "New_Variant": evaluated["sequence"],
-            "Score_TRSp": evaluated["Score_TRSp"],
-            "Score_TRSpAvd": evaluated["Score_TRSpAvd"]
+            "New_Variant": best["sequence"],
+            "Score_TRSp": best["Score_TRSp"],
+            "Score_TRSpAvd": best["Score_TRSpAvd"]
         }
-    codon_changes_done=0
-    while beam and codon_changes_done<=CHANGES:
-        codon_changes_done+=1
+
+    codon_changes_done = 0
+    while beam and codon_changes_done <= CHANGES:
+        codon_changes_done += 1
         variants = []
         for seq in beam:
-            variants.extend(propose_single_codon_changes(seq, frame_offset,rank_max,forbidden_positions,codon_usage))
-        variants=np.unique(variants)
+            variants.extend(
+                propose_single_codon_changes(
+                    seq, frame_offset, rank_max,
+                    forbidden_positions, codon_usage
+                )
+            )
 
+        variants = np.unique(variants)
         evaluated = evaluate_sequences(variants)
 
-        good = [v for v in evaluated if v["Score_TRSp"] >= threshold and v["Score_TRSpAvd"] >= threshold]
+        good = [
+            v for v in evaluated
+            if v["Score_TRSp"] >= threshold and v["Score_TRSpAvd"] >= threshold
+        ]
         if good:
             best = max(good, key=lambda x: x["Score_sum"])
             return {
@@ -312,29 +406,16 @@ def optimize_sequence(original_seq, frame_offset=0,CHANGES=6,rank_max=2,forbidde
                 "Score_TRSp": best["Score_TRSp"],
                 "Score_TRSpAvd": best["Score_TRSpAvd"]
             }
-        elif codon_changes_done==CHANGES+1:
-            best = max(evaluated, key=lambda x: x["Score_sum"])
-            return {
-                "Original_Sequence": original_seq,
-                "New_Variant": best["sequence"],
-                "Score_TRSp": best["Score_TRSp"],
-                "Score_TRSpAvd": best["Score_TRSpAvd"]
-            }
-        
 
         evaluated.sort(key=lambda x: x["Score_sum"], reverse=True)
-        # Keep only Pareto-optimal variants
         pareto_variants = pareto_front(evaluated)
-
-        # Optional: still restrict beam size if too many
         pareto_variants.sort(key=lambda x: x["Score_sum"], reverse=True)
         beam = [v["sequence"] for v in pareto_variants[:40]]
-
 
     return {
         "Original_Sequence": original_seq,
         "New_Variant": original_seq,
-        "All_Codon_Changes": [],
         "Score_TRSp": None,
         "Score_TRSpAvd": None
     }
+
