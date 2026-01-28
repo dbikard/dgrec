@@ -91,7 +91,8 @@ TR_name_list:list, #A list of strings of TRs names
     rates=model_whole.predict(encoded_TR)
     score_df=pd.DataFrame({
         'TR_Name':TR_name_list,
-        'TR_Seq':10**rates
+        'TR_Seq':TR_seq_list,
+        'TR_rates':10**rates
     })
     return score_df
 
@@ -249,7 +250,7 @@ def pareto_front(sequences #Dataframe containing a sequence and its two scores
             pareto.append(s)
     return pareto
 
-def propose_single_codon_changes(seq, frame_offset=0,rank_max=2,forbidden_positions=[],codon_usage=codon_usage_ecoli):
+def propose_single_codon_changes(seq, frame_offset=0,freq_min=0.2,forbidden_positions=[],codon_usage=codon_usage_ecoli):
     """
     Generate all single-codon synonymous changes from a given sequence.
     Takes into account reading frame offset (Position % 3).
@@ -264,8 +265,8 @@ def propose_single_codon_changes(seq, frame_offset=0,rank_max=2,forbidden_positi
             continue
 
         ranked = sorted(codon_usage[aa].items(), key=lambda x: x[1], reverse=True)
-        for new_codon, usage in ranked[:rank_max]:
-            if new_codon == codon:
+        for new_codon, usage in ranked:
+            if new_codon == codon or usage<freq_min:
                 continue
             new_seq = seq[:i] + new_codon + seq[i+3:]
             
@@ -294,7 +295,7 @@ features=2)
             "sequence": seq,
             "Score_TRSp": Score_TRSp[i],
             "Score_TRSpAvd": Score_TRSpAvd[i],
-            "Score_sum": Score_TRSp[i] + Score_TRSpAvd[i]
+            "Score_geo_mean": np.sqrt(Score_TRSp[i] * Score_TRSpAvd[i])
         })
     return results
 
@@ -303,7 +304,8 @@ def optimize_sequence(
     original_seq: str,
     frame_offset: int = 0,
     CHANGES: int = 6,
-    rank_max: int = 2,
+    freq_min: float = 0.2,
+    N: int = 1,
     forbidden_positions: list[int] = [],
     threshold: float = 0.7,
     codon_usage: dict = codon_usage_ecoli
@@ -325,9 +327,10 @@ def optimize_sequence(
         Reading-frame offset (0, 1, or 2) used when grouping codons.
     CHANGES : int, default=6
         Maximum number of codon substitutions allowed.
-    rank_max : int, default=2
-        Number of top-ranked synonymous codons (by usage frequency) to consider
-        per amino acid.
+    freq_min : float, default=0.2
+        Lowest usage frequency acceptable.
+    N : int, default=1
+        Number of putative TR to output.
     forbidden_positions : list[int], optional
         Nucleotide positions that must not be modified.
     threshold : float, default=0.7
@@ -344,6 +347,10 @@ def optimize_sequence(
           Input DNA sequence.
         - `New_Variant` : str  
           Optimized DNA sequence.
+        - `Rank` : int or None  
+          rank of the sequence (by score).
+        - `Score` : float or None  
+          score of the selected variant (geometrical mean).
         - `Score_TRSp` : float or None  
           TR+Sp score of the selected variant.
         - `Score_TRSpAvd` : float or None  
@@ -370,14 +377,16 @@ def optimize_sequence(
         v for v in evaluated
         if v["Score_TRSp"] >= threshold and v["Score_TRSpAvd"] >= threshold
     ]
-    if good:
-        best = max(good, key=lambda x: x["Score_sum"])
-        return {
+    if good and N==1:
+        best = max(good, key=lambda x: x["Score_geo_mean"])
+        return [{
             "Original_Sequence": original_seq,
             "New_Variant": best["sequence"],
+            "Score": best['Score_geo_mean'],
+            "Rank":1,
             "Score_TRSp": best["Score_TRSp"],
             "Score_TRSpAvd": best["Score_TRSpAvd"]
-        }
+        }]
 
     codon_changes_done = 0
     while beam and codon_changes_done <= CHANGES:
@@ -386,36 +395,69 @@ def optimize_sequence(
         for seq in beam:
             variants.extend(
                 propose_single_codon_changes(
-                    seq, frame_offset, rank_max,
+                    seq, frame_offset, freq_min,
                     forbidden_positions, codon_usage
                 )
             )
 
         variants = np.unique(variants)
         evaluated = evaluate_sequences(variants)
-
         good = [
             v for v in evaluated
             if v["Score_TRSp"] >= threshold and v["Score_TRSpAvd"] >= threshold
         ]
         if good:
-            best = max(good, key=lambda x: x["Score_sum"])
-            return {
-                "Original_Sequence": original_seq,
-                "New_Variant": best["sequence"],
-                "Score_TRSp": best["Score_TRSp"],
-                "Score_TRSpAvd": best["Score_TRSpAvd"]
-            }
-
-        evaluated.sort(key=lambda x: x["Score_sum"], reverse=True)
+            good.sort(key=lambda x: x["Score_geo_mean"], reverse=True)
+            selected = good[:N]
+        
+            # 2) if fewer than N, fill with best overall
+            if len(selected) < N:
+                remaining = [
+                    v for v in evaluated
+                    if v["sequence"] not in {s["sequence"] for s in selected}
+                ]
+                remaining.sort(key=lambda x: x["Score_geo_mean"], reverse=True)
+                selected.extend(remaining[: N - len(selected)])
+        
+            # 3) format output
+            return [
+                {
+                    "Original_Sequence": original_seq,
+                    "New_Variant": v["sequence"],
+                    "Score": v["Score_geo_mean"],
+                    "Rank": i+1,
+                    "Score_TRSp": v["Score_TRSp"],
+                    "Score_TRSpAvd": v["Score_TRSpAvd"],
+                }
+                for i,v in enumerate(selected)
+            ]
+        evaluated.sort(key=lambda x: x["Score_geo_mean"], reverse=True)
+        # Keep only Pareto-optimal variants
         pareto_variants = pareto_front(evaluated)
-        pareto_variants.sort(key=lambda x: x["Score_sum"], reverse=True)
-        beam = [v["sequence"] for v in pareto_variants[:40]]
 
-    return {
-        "Original_Sequence": original_seq,
-        "New_Variant": original_seq,
-        "Score_TRSp": None,
-        "Score_TRSpAvd": None
-    }
+        # Optional: still restrict beam size if too many
+        pareto_variants.sort(key=lambda x: x["Score_geo_mean"], reverse=True)
+        beam = [v["sequence"] for v in pareto_variants[:40]]
+    selected=[]
+    evaluated.sort(key=lambda x: x["Score_geo_mean"], reverse=True)
+
+    remaining = [
+                    v for v in evaluated
+                    if v["sequence"] not in {s["sequence"] for s in selected}
+                ]
+    remaining.sort(key=lambda x: x["Score_geo_mean"], reverse=True)
+    selected.extend(remaining[: N - len(selected)])
+        
+            # 3) format output
+    return [
+        {
+            "Original_Sequence": original_seq,
+            "New_Variant": v["sequence"],
+            "Score": v["Score_geo_mean"],
+            "Rank": i+1,
+            "Score_TRSp": v["Score_TRSp"],
+            "Score_TRSpAvd": v["Score_TRSpAvd"],
+        }
+        for i,v in enumerate(selected)
+    ]
 
