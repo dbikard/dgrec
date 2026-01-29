@@ -6,7 +6,7 @@ __all__ = ['align2mut', 'mut_rix', 'get_mutations', 'get_mutations_noalign', 'mu
            'get_basename_without_extension', 'pickle_save', 'pickle_load', 'make_dgr_oligos', 'reverse_comp_geno_list',
            'remove_position', 'remove_position_list']
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #6d632247
 import gzip
 import itertools
 import os
@@ -17,7 +17,7 @@ from Bio.Align import PairwiseAligner
 from Bio.Seq import Seq
 from Bio import SeqIO
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #01ca8313
 def align2mut(align):
     """Converts a sequence alignment result from Bio.pairwise2.Align.globalms into a list of mutations.
     Positions are those of the alignment."""
@@ -28,7 +28,7 @@ def align2mut(align):
             res.append(mut)
     return res
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #0e05a919
 def mut_rix(mutations):
     """Reindexes the positions of the mutations to go from 
     their position in the sequence alignment to their position in the original sequence."""
@@ -42,7 +42,7 @@ def mut_rix(mutations):
             
     return res_rix
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #5250d690
 def get_mutations(seqA,seqB, match=2, mismatch=-1, gap_open=-1, gap_extend=-.5):
     """Aligns two sequences and returns a genotype string.
     The string is a comma separated list of mutations.
@@ -52,7 +52,7 @@ def get_mutations(seqA,seqB, match=2, mismatch=-1, gap_open=-1, gap_extend=-.5):
     mutations=mut_rix(mutations)
     return mutations
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #22c3585a
 def get_mutations_noalign(seqA,seqB):
     """Returns a genotype string.
     The string is a comma separated list of mutations.
@@ -64,14 +64,14 @@ def get_mutations_noalign(seqA,seqB):
             mutations.append((seqA[i],str(i),seqB[i]))
     return mutations
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #30ab41f0
 def mut_to_str(mutations: list):
     """Converts list of mutations to a comma separated string"""
     mut_str_list=[''.join(map(str,mut)) for mut in mutations]
     mut_str=','.join(mut_str_list)
     return mut_str
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #56b96a79
 def str_to_mut(gen: str):
     """Converts genotype string to a list of mutations"""
     
@@ -88,7 +88,7 @@ def str_to_mut(gen: str):
 
         return mutations
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #1594c9fb
 def genstr_to_seq(genstr,refseq):
     j=0
     seq=''
@@ -109,7 +109,7 @@ def genstr_to_seq(genstr,refseq):
 
     return seq
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #273589f5
 def reverse_complement(dna):
     dna=dna.upper()
     # Dictionary to hold the complement of each base
@@ -125,7 +125,7 @@ def reverse_complement(dna):
 
 
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #d0bf4e81
 def get_prot_mut(genstr,refseq,frame=0,ori=1):
     mut_seq=genstr_to_seq(genstr,refseq)
     if ori==-1:
@@ -152,7 +152,7 @@ def get_prot_mut(genstr,refseq,frame=0,ori=1):
     return mut_to_str(get_mutations_noalign(ref_prot,mut_prot))
 
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #0ebd8019
 def parse_genotypes(genotypes_file):
     gen_list=[]
     with open(genotypes_file,"r") as handle: 
@@ -161,7 +161,7 @@ def parse_genotypes(genotypes_file):
             gen_list.append((row[0],int(row[1])))
     return gen_list
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #c12ee4fa
 def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
     amino_mut_dic={}
     for gen, n in gen_list:
@@ -177,7 +177,7 @@ def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
     return aa_mut_list
 
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #0300357e
 def downsample_fastq_gz(input_file, output_file, num_reads=10000):
     """Downsamples a compressed FASTQ file to the specified number of reads.
 
@@ -192,7 +192,7 @@ def downsample_fastq_gz(input_file, output_file, num_reads=10000):
         for line in lines:
             outfile.write(line)
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #7609ded9
 def get_basename_without_extension(file_path):
     """
     Extracts the basename of a file without the extension.
@@ -212,7 +212,7 @@ def get_basename_without_extension(file_path):
         # No extension, return the whole filename
         return basename
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #2a8b793d
 def pickle_save(data_in,file_name_out):
     pickle_out = open(file_name_out,"wb")
     pickle.dump(data_in, pickle_out)
@@ -220,13 +220,13 @@ def pickle_save(data_in,file_name_out):
     
 
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #f216a14d
 def pickle_load(file_name_in):
     pickle_in = open(file_name_in,"rb")
     data_out = pickle.load(pickle_in)
     return data_out
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #d74a03a6
 def make_dgr_oligos(target:str #TR DNA
                     ,split_number:int #Number of desired splits
                     ):
@@ -274,7 +274,7 @@ def make_dgr_oligos(target:str #TR DNA
             
     return(full_list)
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #a1cc4c6a
 def reverse_comp_geno_list(geno_list:list # List of genotypes
                            ,ref_seq:str #string of the template sequence
                            ):
@@ -304,7 +304,7 @@ def reverse_comp_geno_list(geno_list:list # List of genotypes
     return geno_list_rev
 
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #8c50a208
 def remove_position(geno,pos_list):
     mut_split=geno.split(',')
     new_geno=[]
@@ -315,7 +315,7 @@ def remove_position(geno,pos_list):
 
 
 
-# %% ../nbs/API/07_utils.ipynb
+# %% ../nbs/API/07_utils.ipynb #a15df13b
 def remove_position_list(geno_list,pos_list):
     new_geno_list=[]
     for k in geno_list:

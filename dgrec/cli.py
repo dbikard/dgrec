@@ -3,7 +3,7 @@
 # %% auto #0
 __all__ = ['dgrec', 'genotypes', 'genotypes_paired']
 
-# %% ../nbs/API/08_cli.ipynb
+# %% ../nbs/API/08_cli.ipynb #eafd4661
 from fastcore.basics import *
 from Bio import SeqIO
 import gzip as gz
@@ -17,13 +17,13 @@ from .utils import get_mutations, mut_to_str
 from .genotypes import get_genotypes
 from .genotypes_paired import get_genotypes_paired
 
-# %% ../nbs/API/08_cli.ipynb
+# %% ../nbs/API/08_cli.ipynb #9437bf2d
 #Commande line interface
 @click.group()
 def dgrec():
     pass
 
-# %% ../nbs/API/08_cli.ipynb
+# %% ../nbs/API/08_cli.ipynb #3d72438c
 @dgrec.command('genotypes')
 @click.argument('fastq', type=click.Path(exists=True))
 @click.argument('ref', type=click.Path(exists=True))
@@ -55,7 +55,7 @@ def genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, match, mismat
             for g,n in gen_list:
                 handle.write(f"{g}\t{n}\n")
 
-# %% ../nbs/API/08_cli.ipynb
+# %% ../nbs/API/08_cli.ipynb #86bb3f44
 @dgrec.command('genotypes_paired')
 @click.argument('fastq_fwd', type=click.Path(exists=True))
 @click.argument('fastq_rev', type=click.Path(exists=True))

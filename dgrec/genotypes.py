@@ -5,7 +5,7 @@
 # %% auto #0
 __all__ = ['get_UMI_genotype', 'correct_UMI_genotypes', 'genotype_UMI_counter', 'get_genotypes']
 
-# %% ../nbs/API/00_genotypes.ipynb
+# %% ../nbs/API/00_genotypes.ipynb #f5a99c74
 from fastcore.basics import *
 from Bio import SeqIO
 import gzip as gz
@@ -17,7 +17,7 @@ import click
 import csv
 from .utils import get_mutations, mut_to_str
 
-# %% ../nbs/API/00_genotypes.ipynb
+# %% ../nbs/API/00_genotypes.ipynb #46435687
 def get_UMI_genotype(fastq_path: str, #path to the input fastq file
                      ref_seq: str, #sequence of the reference amplicon
                      umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI
@@ -80,7 +80,7 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
     print(log)
     return UMI_gencounter
 
-# %% ../nbs/API/00_genotypes.ipynb
+# %% ../nbs/API/00_genotypes.ipynb #77892502
 def correct_UMI_genotypes(UMI_gencounter: dict, #the output of the get_UMI_genotype function
                           reads_per_umi_thr=2 #only assign a genotype to a UMI if we have reads_per_umi_thr reads for that genotype or more
                           ) -> dict:
@@ -95,7 +95,7 @@ def correct_UMI_genotypes(UMI_gencounter: dict, #the output of the get_UMI_genot
 
     return UMI_gen_dict
 
-# %% ../nbs/API/00_genotypes.ipynb
+# %% ../nbs/API/00_genotypes.ipynb #21cf428a
 def genotype_UMI_counter(UMI_gen_dict):
     """Takes as input the output of correct_UMI_genotypes() and 
     returns a list of genotypes sorted by the number of UMIs detected corresponding that each genotype."""
@@ -104,7 +104,7 @@ def genotype_UMI_counter(UMI_gen_dict):
     return gen_sorted_list
 
 
-# %% ../nbs/API/00_genotypes.ipynb
+# %% ../nbs/API/00_genotypes.ipynb #41048f0f
 def get_genotypes(fastq_path: str, #path to the input fastq file
                     ref_seq: str, #sequence of the reference amplicon
                     umi_size: int = 10, #number of nucleotides at the begining of the read that will be used as the UMI

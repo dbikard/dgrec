@@ -5,7 +5,7 @@
 # %% auto #0
 __all__ = ['get_UMI_genotype_paired', 'get_genotypes_paired']
 
-# %% ../nbs/API/01_genotypes_paired.ipynb
+# %% ../nbs/API/01_genotypes_paired.ipynb #a9d04c67
 from fastcore.basics import *
 from Bio import SeqIO
 import gzip as gz
@@ -18,7 +18,7 @@ import csv
 from .utils import get_mutations, mut_to_str
 from .genotypes import get_mutations, correct_UMI_genotypes, genotype_UMI_counter
 
-# %% ../nbs/API/01_genotypes_paired.ipynb
+# %% ../nbs/API/01_genotypes_paired.ipynb #914181e4
 def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file reading the ref_seq in the forward orientation
                             fastq_path_rev: str, #path to the input fastq file reading the ref_seq in the reverse orientation
                             ref_seq: str, #sequence of the reference amplicon
@@ -132,7 +132,7 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
     print(log)
     return UMI_gencounter
 
-# %% ../nbs/API/01_genotypes_paired.ipynb
+# %% ../nbs/API/01_genotypes_paired.ipynb #d18a08db
 def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file reading the ref_seq in the forward orientation
                         fastq_path_rev: str, #path to the input fastq file reading the ref_seq in the reverse orientation
                         ref_seq: str, #sequence of the reference amplicon

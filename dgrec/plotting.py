@@ -5,7 +5,7 @@
 # %% auto #0
 __all__ = ['plot_mutations', 'plot_mutations_percentage', 'plot_mutations_percentage_protein']
 
-# %% ../nbs/API/02_plotting.ipynb
+# %% ../nbs/API/02_plotting.ipynb #7deb7579
 from fastcore.basics import *
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -21,7 +21,7 @@ import dgrec.utils
 from Bio.Seq import Seq
 
 
-# %% ../nbs/API/02_plotting.ipynb
+# %% ../nbs/API/02_plotting.ipynb #6dcee1d6
 def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple: (string representation of the genotype, number of molecules)
                    ref_seq: str, #reference sequence
                    sample_name: str = None,  #sample name
@@ -81,7 +81,7 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
     return ax
     
 
-# %% ../nbs/API/02_plotting.ipynb
+# %% ../nbs/API/02_plotting.ipynb #6444c393
 def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype is a tuple: (string representation of the genotype, number of molecules)
                    ref_seq: str, #reference sequence
                    sample_name: str = None,  #sample name
@@ -161,7 +161,7 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
     #plt.close()
     return (ax,np.round(100*count_muta/count_geno,2))
 
-# %% ../nbs/API/02_plotting.ipynb
+# %% ../nbs/API/02_plotting.ipynb #1367e66e
 def plot_mutations_percentage_protein(aa_mut_list, # list of genotypes. Each genotype is a tuple: (string representation of the genotype, number of molecules)
                                        ref_prot, # reference sequence
                                        plot_range=None,  # limits the plot to the specified range
