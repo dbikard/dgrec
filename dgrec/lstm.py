@@ -4,8 +4,9 @@
 __all__ = ['EPS', 'data_path', 'model_name', 'model_path', 'model_TR_to_VR', 'firstmodel', 'secondmodel', 'codon_usage_ecoli',
            'genetic_code', 'CODON_TO_AA', 'AA', 'AA_IDS', 'AA_TO_CODONS', 'masked_categorical_crossentropy',
            'masked_accuracy', 'one_hot_encode', 'one_hot_decode', 'separate_model', 'generate_sequence_from_onehot',
-           'sequences_same_length', 'pad_sequence', 'nt_to_codons', 'codons_to_aa', 'nt_prot', 'generate_sequences',
-           'generate_sequences_oneTR', 'EvaluateTR_to_prot', 'optimize_sequence_display_proteins']
+           'sequences_same_length', 'pad_sequence', 'nt_to_codons', 'codons_to_aa', 'nt_prot', 'to_tensor_inputs',
+           'generate_sequences', 'generate_sequences_oneTR', 'EvaluateTR_to_prot', 'optimize_sequence_display_proteins',
+           'compute_likelihood', 'compute_likelihood_batch', 'compute_likelihood_list', 'compute_likelihood_matrix']
 
 # %% ../nbs/API/09_lstm.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import logomaker
@@ -361,6 +362,8 @@ def codons_to_aa(codons):
 def nt_prot(nt):
     return codons_to_aa(nt_to_codons(nt))
 
+def to_tensor_inputs(*args):
+    return [tf.convert_to_tensor(x) for x in args]
 
 # %% ../nbs/API/09_lstm.ipynb #8a80d927-30cc-4946-bfc5-3fb934471726
 def generate_sequences(X_seq): #X _seq is a list of sequences ATCG sequences (faster if same length)
@@ -517,3 +520,256 @@ def optimize_sequence_display_proteins(original_seq: str,
         Prot=EvaluateTR_to_prot(record[i]["New_Variant"],NDGR=NDGR,offset=frame_offset)
         record[i]['Proteins']=Prot
     return record
+
+# %% ../nbs/API/09_lstm.ipynb #265d2712-2bfa-482d-8c19-420b904a0350
+def compute_likelihood(TR, VR):
+    """
+    Compute the log-likelihood of generating a variant sequence (VR)
+    given a template/reference sequence (TR).
+    
+    Parameters
+    ----------
+    TR : str
+        Reference/template sequence.
+    VR : str
+        Variant sequence to score.
+
+    Returns
+    -------
+    float
+        Log-likelihood of VR given TR.
+    """
+    assert len(TR) == len(VR), "Mismatched lengths"
+
+    vocab_size = 4
+    lstm_units = 16
+    seq_length = len(TR)
+
+    # Encode and reverse sequences.
+    # X includes one-hot encoding of TR plus positional indices.
+    X = np.array([
+        np.concatenate(
+            (one_hot_encode(TR[::-1]), [[i] for i in range(len(TR))]),
+            axis=1
+        )
+    ])
+
+    # One-hot encode reversed VR (target sequence)
+    Y = np.array([one_hot_encode(VR[::-1])])
+
+    # Run first model to obtain intermediate representations
+    inter_softmax_out, inter_relu_out = firstmodel.predict(X, verbose=0)
+
+    # Initialize mutation model input tensor
+    # Shape: (batch, sequence length, 2*vocab_size + 1)
+    X_mut = np.zeros((1, seq_length, 2 * vocab_size + 1))
+
+    # Set start token for first timestep
+    X_mut[:, 0, -1] = 1
+
+    # Populate mutation input using previous TR and VR tokens
+    for t in range(1, seq_length):
+        X_mut[:, t, :vocab_size] = X[:, t - 1, :vocab_size]
+        X_mut[:, t, vocab_size:2 * vocab_size] = Y[:, t - 1, :]
+
+    # Initialize LSTM hidden and cell states
+    initial_h = np.zeros((1, lstm_units))
+    initial_c = np.zeros((1, lstm_units))
+
+    # Run second model for full sequence prediction
+    outputs, _, _ = secondmodel.predict(
+        [X, X_mut, inter_softmax_out, inter_relu_out, initial_h, initial_c],
+        verbose=0
+    )
+
+    # Compute total log-likelihood over sequence
+    log_likelihoods = []
+    for b in range(1):
+        log_prob = 0.0
+        for t in range(seq_length):
+            prob = outputs[b, t, np.argmax(Y[b, t])]
+            log_prob += np.log(prob + 1e-8)
+        log_likelihoods.append(log_prob)
+
+    return log_likelihoods[0]
+
+# %% ../nbs/API/09_lstm.ipynb #4f2e37b5-bee4-4b0a-b053-c032307a047e
+def compute_likelihood_batch(TR_batch, VR_batch):
+    """
+    Compute log-likelihoods for a batch of (TR, VR) sequence pairs.
+
+    All sequences in the batch must:
+    - Have matching TR/VR lengths
+    - Share the same sequence length across the batch
+
+    Parameters
+    ----------
+    TR_batch : list of str
+        List of reference/template sequences.
+    VR_batch : list of str
+        List of variant sequences.
+
+    Returns
+    -------
+    list of float
+        Log-likelihoods for each (TR, VR) pair.
+    """
+    assert all(len(tr) == len(vr) for tr, vr in zip(TR_batch, VR_batch)), "Mismatched lengths"
+
+    vocab_size = 4
+    lstm_units = 16
+    batch_size = len(TR_batch)
+    seq_length = max ([len(tr) for tr in TR_batch])
+
+    # Encode and reverse TR sequences with positional indices
+    X = np.array([
+        np.concatenate(
+            (one_hot_encode(TR_batch[k][::-1]), [[i] for i in range(len(TR_batch[k]))]),
+            axis=1
+        )
+        for k in range(len(TR_batch))
+    ])
+
+    # Encode and reverse VR sequences
+    Y = np.array([one_hot_encode(vr[::-1]) for vr in VR_batch])
+
+    # First model forward pass
+    inter_softmax_out, inter_relu_out = firstmodel.predict(X, verbose=0)
+
+    # Initialize mutation input tensor
+    X_mut = np.zeros((batch_size, seq_length, 2 * vocab_size + 1))
+
+    # Start tokens at first timestep
+    X_mut[:, 0, -1] = 1
+
+    # Fill mutation inputs using previous TR and VR tokens
+    for t in range(1, seq_length):
+        X_mut[:, t, :vocab_size] = X[:, t - 1, :vocab_size]
+        X_mut[:, t, vocab_size:2 * vocab_size] = Y[:, t - 1, :]
+
+    # Initialize LSTM states for entire batch
+    initial_h = np.zeros((batch_size, lstm_units))
+    initial_c = np.zeros((batch_size, lstm_units))
+
+    # Run second model
+    outputs, _, _ = secondmodel.predict(
+        [X, X_mut, inter_softmax_out, inter_relu_out, initial_h, initial_c],
+        verbose=0
+    )
+
+    # Accumulate log-likelihoods per sequence
+    log_likelihoods = []
+    for b in range(batch_size):
+        log_prob = 0.0
+        for t in range(seq_length):
+            prob = outputs[b, t, np.argmax(Y[b, t])]
+            log_prob += np.log(prob + 1e-100)
+        log_likelihoods.append(log_prob)
+
+    return log_likelihoods
+
+# %% ../nbs/API/09_lstm.ipynb #c2bc5a52-813b-4d64-8c3b-21b5d5e01ce9
+def compute_likelihood_list(TR_list, VR_list):
+    """
+    Compute log-likelihoods for (TR, VR) pairs.
+
+    Parameters
+    ----------
+    TR_list : list of str
+        Reference/template sequences.
+    VR_list : list of str
+        Variant sequences.
+
+    Returns
+    -------
+    list of float
+        Log-likelihoods in the same order as input.
+    """
+    assert len(TR_list) == len(VR_list)
+    assert all(len(tr) == len(vr) for tr, vr in zip(TR_list, VR_list)), \
+        "Mismatched TR/VR lengths"
+
+    # --- group indices by sequence length ---
+    length_to_indices = {}
+    for i, tr in enumerate(TR_list):
+        L = len(tr)
+        length_to_indices.setdefault(L, []).append(i)
+
+    # output container
+    log_likelihoods = [None] * len(TR_list)
+
+    # --- process each length group ---
+    for L, indices in length_to_indices.items():
+        TR_batch = [TR_list[i] for i in indices]
+        VR_batch = [VR_list[i] for i in indices]
+
+        batch_lls = compute_likelihood_batch(
+            TR_batch,
+            VR_batch
+        )
+
+        # restore original order
+        for idx, ll in zip(indices, batch_lls):
+            log_likelihoods[idx] = ll
+
+    return log_likelihoods
+
+
+# %% ../nbs/API/09_lstm.ipynb #48e675a6-4402-43cf-88b3-a78bee57ac3f
+def compute_likelihood_matrix(
+    TR_list,
+    VR_list,
+    batch_size=64
+):
+    """
+    Compute a matrix of log-likelihoods where each entry (i, j)
+    corresponds to the log-likelihood of generating VR_list[j]
+    from TR_list[i].
+
+    Sequences with mismatched lengths are assigned -inf.
+
+    Parameters
+    ----------
+    TR_list : list of str
+        List of reference/template sequences.
+    VR_list : list of str
+        List of variant sequences.
+    batch_size : int
+        (Currently unused) Intended batch size for future optimization.
+
+    Returns
+    -------
+    list of list of float
+        Log-likelihood matrix of shape (len(TR_list), len(VR_list)).
+    """
+    result_matrix = []
+
+    for i in range(len(TR_list)):
+        row = []
+        TR = TR_list[i]
+
+        # Filter VRs matching current TR length
+        valid_VRs = [vr for vr in VR_list if len(vr) == len(TR)]
+
+        if not valid_VRs:
+            # No compatible VRs
+            row = [-np.inf] * len(VR_list)
+        else:
+            # Compute likelihoods for all compatible VRs
+            batch_TRs = [TR] * len(valid_VRs)
+            log_likelihoods = compute_likelihood_batch(
+                batch_TRs,
+                valid_VRs
+            )
+
+            idx = 0
+            for vr in VR_list:
+                if len(vr) != len(TR):
+                    row.append(-np.inf)
+                else:
+                    row.append(log_likelihoods[idx])
+                    idx += 1
+
+        result_matrix.append(row)
+
+    return result_matrix
