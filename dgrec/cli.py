@@ -110,4 +110,3 @@ def genotypes_paired(fastq_fwd, fastq_rev, ref, fwd_span, rev_span, require_perf
   with open(output,"w") as handle:
     for g,n in gen_list:
       handle.write(f"{g}\t{n}\n")
-
