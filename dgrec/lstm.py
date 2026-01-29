@@ -366,69 +366,143 @@ def to_tensor_inputs(*args):
     return [tf.convert_to_tensor(x) for x in args]
 
 # %% ../nbs/API/09_lstm.ipynb #8a80d927-30cc-4946-bfc5-3fb934471726
-def generate_sequences(X_seq): #X _seq is a list of sequences ATCG sequences (faster if same length)
+def generate_sequences(X_seq: list[str] #list of TR sequences
+                      ) -> list[str]:
     """
-    Generate list of VR from list of TR (one TR-> one VR).
-    Parameters:
-    - X_seq: list of TR sequences (e.g., strings, lists, or arrays)
-    Returns:
-    - list: list of VR sequence strings given TR sequences (corresponding to the initial TR list).
-    """
-    X=[np.concatenate((one_hot_encode((X_seq[k])[::-1]),[[i] for i in range(len(X_seq[k]))]),axis=1) for k in range(len(X_seq))]
-    if sequences_same_length(X_seq): # check that all sequences have same length: allow for fast generation
-        Y=generate_sequence_from_onehot(np.array(X),firstmodel,secondmodel)
-        return [one_hot_decode(y)[::-1] for y in Y] # return sequence in good order
-    else:
-        max_len = max(len(seq)+2 for seq in X_seq)
-        length=np.array([len(seq) for seq in X_seq])
-        X_padded = np.array([pad_sequence(seq, max_len) for seq in X])
-        Y=generate_sequence_from_onehot(X_padded,firstmodel,secondmodel)
-        return [(one_hot_decode(Y[i])[:length[i]])[::-1] for i in range(len(Y))] # return sequence in good order
+    Generate VR sequences from a list of TR sequences.
 
-def generate_sequences_oneTR(TR,n=1000):
-    """
-    Generate list of VR from one TR (one TR-> n VR).
-    Parameters:
-    - TR: one TR sequence (e.g., strings, lists, or arrays)
-    -n: integer corresponding to the number of VR to generate
-    Returns:
-    - list: list of n VR sequence strings given the one TR sequence.
-    """
-    TR_list=[TR]*n
-    return generate_sequences(TR_list)
+    Each TR sequence produces exactly one VR sequence.
 
-# %% ../nbs/API/09_lstm.ipynb #493ad454-95a7-4eff-bd9c-ae857afa003e
-def EvaluateTR_to_prot(TR, NDGR=100, offset=0):
+    Parameters
+    ----------
+    X_seq : list of str
+        List of TR nucleotide sequences (e.g. "ATCG").
+        For faster generation, all sequences should have the same length.
+
+    Returns
+    -------
+    list of str
+        List of generated VR sequences, in the same order as `X_seq`.
+
+    Notes
+    -----
+    - If all input sequences have the same length, generation is vectorized
+      for improved performance.
+    - Output sequences are returned in the original (non-reversed) order.
     """
-    Give the sequence logo of the proteins that are accessible to the TR via DGR.
-    Parameters:
-    - TR: one TR sequence (e.g., strings, lists, or arrays)
-    - NDGR: integer corresponding to the number of VR to generate
-    - offset: the offset to consider for nucleotide to protein translation
-    Returns:
-    - Counter: dictionnary of proteins with counts.
-    """
-    VR = generate_sequences_oneTR(TR, NDGR)
-    Proteins = [nt_prot(vr[offset:]) for vr in VR]
-    df = logomaker.alignment_to_matrix(
-        sequences=Proteins,
-        to_type='counts'
+    X = [
+        np.concatenate(
+            (
+                one_hot_encode(seq[::-1]),
+                [[i] for i in range(len(seq))]
+            ),
+            axis=1
+        )
+        for seq in X_seq
+    ]
+
+    if sequences_same_length(X_seq):
+        Y = generate_sequence_from_onehot(
+            np.array(X), firstmodel, secondmodel
+        )
+        return [one_hot_decode(y)[::-1] for y in Y]
+
+    max_len = max(len(seq) + 2 for seq in X_seq)
+    lengths = np.array([len(seq) for seq in X_seq])
+
+    X_padded = np.array([pad_sequence(seq, max_len) for seq in X])
+    Y = generate_sequence_from_onehot(
+        X_padded, firstmodel, secondmodel
     )
 
-    # normalize to probabilities
+    return [
+        one_hot_decode(Y[i])[:lengths[i]][::-1]
+        for i in range(len(Y))
+    ]
+
+#| export
+def generate_sequences_oneTR(TR: str #TR sequence
+                             , n: int = 1000 #NUmber of VR to generate
+                            ) -> list[str]:
+    """
+    Generate multiple VR sequences from a single TR sequence.
+
+    Parameters
+    ----------
+    TR : str
+        Input TR nucleotide sequence.
+    n : int, default=1000
+        Number of VR sequences to generate.
+
+    Returns
+    -------
+    list of str
+        List of `n` generated VR sequences.
+    """
+    return generate_sequences([TR] * n)
+
+
+# %% ../nbs/API/09_lstm.ipynb #493ad454-95a7-4eff-bd9c-ae857afa003e
+def EvaluateTR_to_prot(
+    TR: str #The TR sequence 
+    ,NDGR: int = 100 #Number of VR to generate for the protein logo
+    ,offset: int = 0 #The offset for protein translation
+) -> Counter:
+    """
+    Evaluate protein diversity accessible from a TR sequence via DGR.
+
+    Generates VR sequences from a single TR, translates them into proteins,
+    and displays a protein sequence logo based on amino-acid frequencies.
+
+    Parameters
+    ----------
+    TR : str
+        Input TR nucleotide sequence.
+    NDGR : int, default=100
+        Number of VR sequences to generate from the TR.
+    offset : int, default=0
+        Nucleotide offset applied before translation to protein.
+
+    Returns
+    -------
+    collections.Counter
+        Counts of translated protein sequences.
+
+    Notes
+    -----
+    - Translation is performed after applying the nucleotide `offset`.
+    - The sequence logo shows per-position amino-acid probabilities.
+    """
+    VR = generate_sequences_oneTR(TR, NDGR)
+
+    proteins = [
+        nt_prot(vr[offset:])
+        for vr in VR
+    ]
+
+    # Build amino-acid count matrix
+    df = logomaker.alignment_to_matrix(
+        sequences=proteins,
+        to_type="counts"
+    )
+
+    # Normalize counts to probabilities per position
     df = df.div(df.sum(axis=1), axis=0)
 
     plt.figure(figsize=(12, 4))
     logomaker.Logo(
         df,
-        color_scheme='chemistry',   # 👈 nice protein coloring
-        shade_below=.5,
-        fade_below=.5
+        color_scheme="chemistry",
+        shade_below=0.5,
+        fade_below=0.5
     )
     plt.title("Protein Sequence Logo")
     plt.ylabel("Frequency")
+    plt.xlabel("Amino acid position")
+    plt.tight_layout()
     plt.show()
-    return Counter(Proteins)
+
+    return Counter(proteins)
 
 
 # %% ../nbs/API/09_lstm.ipynb #42378de4-e643-4097-86b8-3a709638923a
