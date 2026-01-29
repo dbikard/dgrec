@@ -2,9 +2,9 @@
 
 # %% auto 0
 __all__ = ['align2mut', 'mut_rix', 'get_mutations', 'get_mutations_noalign', 'mut_to_str', 'str_to_mut', 'genstr_to_seq',
-           'is_dgrec', 'reverse_complement', 'get_prot_mut', 'parse_genotypes', 'get_aa_mut_list',
-           'downsample_fastq_gz', 'get_basename_without_extension', 'pickle_save', 'pickle_load', 'make_dgr_oligos',
-           'reverse_comp_geno_list', 'remove_position', 'remove_position_list', 'save_alignment_to_svg']
+           'reverse_complement', 'get_prot_mut', 'parse_genotypes', 'get_aa_mut_list', 'downsample_fastq_gz',
+           'get_basename_without_extension', 'pickle_save', 'pickle_load', 'make_dgr_oligos', 'reverse_comp_geno_list',
+           'remove_position', 'remove_position_list']
 
 # %% ../nbs/API/07_utils.ipynb 2
 import gzip
@@ -16,11 +16,6 @@ from .pairwise2 import format_alignment
 from Bio.Align import PairwiseAligner
 from Bio.Seq import Seq
 from Bio import SeqIO
-from typing import List, Optional
-import svgwrite
-from Bio import pairwise2
-from Bio.Seq import Seq
-from Bio.Data import CodonTable
 
 # %% ../nbs/API/07_utils.ipynb 3
 def align2mut(align):
@@ -115,20 +110,8 @@ def genstr_to_seq(genstr,refseq):
     return seq
 
 # %% ../nbs/API/07_utils.ipynb 23
-def is_dgrec(genotype:str, min_length=2, min_A_proportion=0.7) -> bool:
-    """Checks if a genotype string is a valid dgrec genotype."""
-    if not genotype:
-        return False
-    mutations = str_to_mut(genotype)
-    if len(mutations)>=min_length:
-        A_proportion = sum([m[0]=='A' for m in mutations])/len(mutations)
-        if A_proportion >= min_A_proportion:
-            return True
-    
-    return False
-
-# %% ../nbs/API/07_utils.ipynb 25
 def reverse_complement(dna):
+    dna=dna.upper()
     # Dictionary to hold the complement of each base
     complement = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C','-': '-','N': 'N'}
     
@@ -141,7 +124,8 @@ def reverse_complement(dna):
     return reverse_complement_dna
 
 
-# %% ../nbs/API/07_utils.ipynb 26
+
+# %% ../nbs/API/07_utils.ipynb 24
 def get_prot_mut(genstr,refseq,frame=0,ori=1):
     mut_seq=genstr_to_seq(genstr,refseq)
     if ori==-1:
@@ -167,23 +151,17 @@ def get_prot_mut(genstr,refseq,frame=0,ori=1):
     ref_prot=ref_prot[:L]
     return mut_to_str(get_mutations_noalign(ref_prot,mut_prot))
 
-# %% ../nbs/API/07_utils.ipynb 30
-def parse_genotypes(genotypes_file, delimiter='\t',ref_sequence=False):
+
+# %% ../nbs/API/07_utils.ipynb 28
+def parse_genotypes(genotypes_file):
     gen_list=[]
     with open(genotypes_file,"r") as handle: 
-        reader = csv.reader(handle, delimiter=delimiter)
-        if ref_sequence:
-            reference_sequence = next(reader)[0]
-            
+        reader = csv.reader(handle, delimiter='\t')
         for row in reader:
             gen_list.append((row[0],int(row[1])))
-        
-        if ref_sequence:
-            return reference_sequence, gen_list
-        else:
-            return gen_list
+    return gen_list
 
-# %% ../nbs/API/07_utils.ipynb 33
+# %% ../nbs/API/07_utils.ipynb 31
 def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
     amino_mut_dic={}
     for gen, n in gen_list:
@@ -198,7 +176,8 @@ def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
     aa_mut_list=sorted(aa_mut_list,key=lambda x: x[1],reverse=True)
     return aa_mut_list
 
-# %% ../nbs/API/07_utils.ipynb 35
+
+# %% ../nbs/API/07_utils.ipynb 33
 def downsample_fastq_gz(input_file, output_file, num_reads=10000):
     """Downsamples a compressed FASTQ file to the specified number of reads.
 
@@ -213,7 +192,7 @@ def downsample_fastq_gz(input_file, output_file, num_reads=10000):
         for line in lines:
             outfile.write(line)
 
-# %% ../nbs/API/07_utils.ipynb 37
+# %% ../nbs/API/07_utils.ipynb 35
 def get_basename_without_extension(file_path):
     """
     Extracts the basename of a file without the extension.
@@ -233,20 +212,21 @@ def get_basename_without_extension(file_path):
         # No extension, return the whole filename
         return basename
 
-# %% ../nbs/API/07_utils.ipynb 41
+# %% ../nbs/API/07_utils.ipynb 39
 def pickle_save(data_in,file_name_out):
     pickle_out = open(file_name_out,"wb")
     pickle.dump(data_in, pickle_out)
     pickle_out.close()
     
 
-# %% ../nbs/API/07_utils.ipynb 42
+
+# %% ../nbs/API/07_utils.ipynb 40
 def pickle_load(file_name_in):
     pickle_in = open(file_name_in,"rb")
     data_out = pickle.load(pickle_in)
     return data_out
 
-# %% ../nbs/API/07_utils.ipynb 43
+# %% ../nbs/API/07_utils.ipynb 41
 def make_dgr_oligos(target:str #TR DNA
                     ,split_number:int #Number of desired splits
                     ):
@@ -294,7 +274,7 @@ def make_dgr_oligos(target:str #TR DNA
             
     return(full_list)
 
-# %% ../nbs/API/07_utils.ipynb 45
+# %% ../nbs/API/07_utils.ipynb 43
 def reverse_comp_geno_list(geno_list:list # List of genotypes
                            ,ref_seq:str #string of the template sequence
                            ):
@@ -323,7 +303,8 @@ def reverse_comp_geno_list(geno_list:list # List of genotypes
     geno_list_rev = list(gene_rev_dic.items())
     return geno_list_rev
 
-# %% ../nbs/API/07_utils.ipynb 46
+
+# %% ../nbs/API/07_utils.ipynb 44
 def remove_position(geno,pos_list):
     mut_split=geno.split(',')
     new_geno=[]
@@ -333,7 +314,8 @@ def remove_position(geno,pos_list):
     return ','.join(new_geno)
 
 
-# %% ../nbs/API/07_utils.ipynb 47
+
+# %% ../nbs/API/07_utils.ipynb 45
 def remove_position_list(geno_list,pos_list):
     new_geno_list=[]
     for k in geno_list:
@@ -347,103 +329,3 @@ def remove_position_list(geno_list,pos_list):
             new_geno_k=geno_k
             new_geno_list.append((new_geno_k,count_k))
     return new_geno_list
-
-# %% ../nbs/API/07_utils.ipynb 50
-def save_alignment_to_svg(
-    reference: str, #The reference DNA sequence
-    sequences: List[str], #A list of mutated DNA sequences
-    labels: Optional[List[str]] = None, #Labels for the mutated sequences. Defaults to "Mutated X"
-    filename: str = "alignment.svg" #Output SVG file name. Defaults to alignement.svg
-) -> None:
-    """
-    Saves DNA and amino acid sequence alignments to an SVG file.
-    
-    - Aligns input sequences to a reference (both at DNA and protein levels).
-    - Highlights mismatches and codon structures.
-    - Colors bases and amino acids by biochemical properties.
-    """
-    if labels is None:
-        labels = [f"Mutated {i+1}" for i in range(len(sequences))]
-    
-    # Translate DNA to amino acids
-    ref_aa = translate_dna(reference)
-    seqs_aa = [translate_dna(seq) for seq in sequences]
-    
-    # Perform pairwise alignments (DNA and protein levels)
-    alignments = [pairwise2.align.localms(reference, seq, 2, 0, -3, -2, one_alignment_only=True)[0] for seq in sequences]
-    aa_alignments = [pairwise2.align.localms(ref_aa, seq_aa, 2, 0, -2, -1, one_alignment_only=True)[0] for seq_aa in seqs_aa]
-    
-    # SVG drawing settings
-    dwg = svgwrite.Drawing(filename, profile='tiny', size=(len(reference) * 17 + 160, 70 + len(sequences) * 40))
-    font_size, line_spacing = 14, 20
-    codon_spacing, aa_spacing = 15, 45
-    x_start, y_start = 10, 30
-    
-    # Define color mappings
-    base_colors = {"A": "#FF9999", "T": "#99FF99", "G": "#FFFF99", "C": "#99FFFF", '-': '#FFFFFF'}
-    aa_colors = {"A": "#6693BA", "I": "#6693BA", "L": "#6693BA", "V": "#6693BA", "P": "#6693BA", "G": "#6693BA",
-                 "F": "#AB88A9", "W": "#AB88A9", "Y": "#AB88A9", "D": "#D2A392", "E": "#D2A392", "H": "#E0C08B",
-                 "K": "#E0C08B", "R": "#E0C08B", "S": "#6DABA9", "T": "#6DABA9", "C": "#6DABA9", "M": "#6DABA9",
-                 "N": "#6DABA9", "Q": "#6DABA9", "-": "#FFFFFF", "*": "#BB888C"}
-    
-    def add_colored_text(dwg, text, x, y, color="black", bgcolor=None):
-        """Adds colored rectangles with text to the SVG."""
-        if bgcolor:
-            dwg.add(dwg.rect(insert=(x-2, y-14), size=(12, 18), fill=bgcolor, stroke="none"))
-        dwg.add(dwg.text(text, insert=(x, y), font_size=font_size, fill=color, font_family="Courier"))
-    
-    # DNA Alignment Section
-    y_offset = y_start
-    ref_aligned, *_ = alignments[0]
-    x_offset = x_start
-    add_colored_text(dwg, "Reference:", x_offset, y_offset)
-    x_offset += 150
-    codon_positions = []
-    
-    for i, base in enumerate(ref_aligned):
-        bgcolor = base_colors.get(base, None)
-        add_colored_text(dwg, base, x_offset, y_offset, bgcolor=bgcolor)
-        x_offset += codon_spacing
-        if (i+1) % 3 == 0:
-            x_offset += 5
-            codon_positions.append(x_offset - codon_spacing)
-    y_offset += line_spacing
-    
-    # Amino Acid Reference Alignment
-    ref_aa_aligned, *_ = aa_alignments[0]
-    x_offset = x_start
-    add_colored_text(dwg, "AA Ref:", x_offset, y_offset)
-    x_offset += 150
-    for j, aa in enumerate(ref_aa_aligned):
-        add_colored_text(dwg, aa, codon_positions[j]-20, y_offset, bgcolor=aa_colors.get(aa, "#FFFFFF"))
-    y_offset += line_spacing
-    
-    # Process Each Mutated Sequence
-    for i, (alignment, label) in enumerate(zip(alignments, labels)):
-        ref_seq, seq_aligned, *_ = alignment
-        x_offset = x_start
-        add_colored_text(dwg, f"{label}:", x_offset, y_offset)
-        x_offset += 150
-        
-        count = 0
-        for ref_base, seq_base in zip(ref_aligned, seq_aligned):
-            bgcolor = base_colors.get(seq_base, None) if ref_base != seq_base and seq_base != "-" else "#FFFFFF"
-            add_colored_text(dwg, seq_base, x_offset, y_offset, bgcolor=bgcolor)
-            x_offset += codon_spacing
-            if (count+1) % 3 == 0:
-                x_offset += 5
-            count += 1
-        y_offset += line_spacing
-        
-        # Amino Acid Alignment for Mutated Sequence
-        ref_aa_seq, aa_seq_aligned, *_ = aa_alignments[i]
-        x_offset = x_start + 150
-        
-        for j, (ref_aa, seq_aa) in enumerate(zip(ref_aa_aligned, aa_seq_aligned)):
-            bgcolor = aa_colors.get(seq_aa, None) if ref_aa != seq_aa and seq_aa != "-" else "#FFFFFF"
-            add_colored_text(dwg, seq_aa, codon_positions[j]-20, y_offset, bgcolor=bgcolor)
-        y_offset += line_spacing
-    
-    # Save to file
-    dwg.save()
-    print(f"Alignment saved to {filename}")
