@@ -10,7 +10,6 @@ website:
           - API/03_analysis.ipynb
           - API/04_encoding.ipynb
           - API/05_predictions.ipynb
-          - API/06_evolution.ipynb
           - API/07_utils.ipynb
           - API/08_cli.ipynb
           - API/09_lstm.ipynb
