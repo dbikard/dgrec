@@ -4,8 +4,8 @@
 __all__ = ['data_path', 'model_name', 'model_path', 'model_Sp', 'model_name2', 'model_path2', 'model_Avd_Sp', 'model_name_whole',
            'model_path_whole', 'model_whole', 'codon_usage_ecoli', 'genetic_code', 'CODON_TO_AA', 'AA', 'AA_IDS',
            'AA_TO_CODONS', 'score', 'score_list', 'DGR_percentage', 'DGR_percentage_list', 'nt_to_codons',
-           'codons_to_aa', 'nt_prot', 'pareto_front', 'codons_compatible_with_AA', 'propose_single_codon_changes',
-           'evaluate_sequences']
+           'codons_to_aa', 'nt_prot', 'pareto_front', 'propose_single_codon_changes', 'evaluate_sequences',
+           'optimize_sequence']
 
 # %% ../nbs/API/05_predictions.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import pickle
@@ -250,91 +250,27 @@ def pareto_front(sequences #Dataframe containing a sequence and its two scores
             pareto.append(s)
     return pareto
 
-def codons_compatible_with_AA(target_aa, genetic_code):
+def propose_single_codon_changes(seq, frame_offset=0,freq_min=0.2,forbidden_positions=[],codon_usage=codon_usage_ecoli):
     """
-    Return all codons X such that replacing any 'A' in X by {A,C,G,T}
-    can yield a codon encoding target_aa.
-    """
-    compatible = []
-
-    for codon, aa in genetic_code.items():
-        if aa != target_aa:
-            continue
-
-        # For this "real" codon, generate all abstract codons
-        # where any non-A position must match, and A can stand for anything
-        abstract = []
-        for nt in codon:
-            if nt == "A":
-                abstract.append(["A"])  # must stay A in abstract
-            else:
-                abstract.append([nt, "A"])  # could have been wildcard A
-
-        for triplet in product(*abstract):
-            compatible.append("".join(triplet))
-
-    return set(compatible)
-
-
-def propose_single_codon_changes(
-    seq,
-    dict_allowed=defaultdict(list),
-    frame_offset=0,
-    freq_min=0.2,
-    forbidden_positions=[],
-    codon_usage=codon_usage_ecoli,
-):
-    """
-    dict_allowed[i] = list of allowed TARGET amino acids at codon i
+    Generate all single-codon synonymous changes from a given sequence.
+    Takes into account reading frame offset (Position % 3).
+    Returns list of (new_seq, new_changes).
     """
     variants = []
-
-    for i in range(frame_offset, len(seq) - 2, 3):
-        if any(pos in forbidden_positions for pos in (i, i+1, i+2)):
+    for i in range(frame_offset, len(seq)-2, 3):
+      if not( (i in forbidden_positions) or (i+1 in forbidden_positions) or (i+2 in forbidden_positions)): 
+        codon = seq[i:i+3]
+        aa = genetic_code.get(codon, "?")
+        if aa not in codon_usage:
             continue
 
-        codon = seq[i:i+3]
-        allowed_aas = dict_allowed.get((i-frame_offset)//3, [])
-
-        # No restriction → behave as before
-        if not allowed_aas:
-            aa = genetic_code.get(codon)
-            if aa not in codon_usage:
+        ranked = sorted(codon_usage[aa].items(), key=lambda x: x[1], reverse=True)
+        for new_codon, usage in ranked:
+            if new_codon == codon or usage<freq_min:
                 continue
-
-            ranked = sorted(
-                codon_usage[aa].items(),
-                key=lambda x: x[1],
-                reverse=True,
-            )
-
-            for new_codon, usage in ranked:
-                if usage <= freq_min or new_codon == codon:
-                    continue
-                variants.append(seq[:i] + new_codon + seq[i+3:])
-
-        # Restricted case: AA → compatible codons
-        else:
+            new_seq = seq[:i] + new_codon + seq[i+3:]
             
-            candidate_codons = set(codons_compatible_with_AA(allowed_aas[0], genetic_code))
-            for aa in allowed_aas[1:]:
-                candidate_codons &= codons_compatible_with_AA(aa, genetic_code)
-
-            for new_codon in candidate_codons:
-                aa = genetic_code.get(new_codon)
-                
-                if aa not in codon_usage:
-                    continue
-
-                usage = codon_usage[aa].get(new_codon, 0)
-                if usage <= freq_min:
-                    continue
-
-                if new_codon == codon:
-                    continue
-
-                variants.append(seq[:i] + new_codon + seq[i+3:])
-
+            variants.append(new_seq)
     return variants
 
 def evaluate_sequences(variants):
@@ -367,7 +303,6 @@ features=2)
 def optimize_sequence(
     original_seq: str,
     frame_offset: int = 0,
-    dict_allowed dict = defaultdict(list),
     CHANGES: int = 6,
     freq_min: float = 0.2,
     N: int = 1,
@@ -390,8 +325,6 @@ def optimize_sequence(
         Original DNA sequence to optimize.
     frame_offset : int, default=0
         Reading-frame offset (0, 1, or 2) used when grouping codons.
-    dict_allowed : dict, defaultdict(list)
-        Dictionnary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
     CHANGES : int, default=6
         Maximum number of codon substitutions allowed.
     freq_min : float, default=0.2
@@ -462,7 +395,7 @@ def optimize_sequence(
         for seq in beam:
             variants.extend(
                 propose_single_codon_changes(
-                    seq,dict_allowed, frame_offset, freq_min,
+                    seq, frame_offset, freq_min,
                     forbidden_positions, codon_usage
                 )
             )

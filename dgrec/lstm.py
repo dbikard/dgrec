@@ -510,7 +510,6 @@ from . import predictions
 
 def optimize_sequence_display_proteins(original_seq: str,
     frame_offset: int = 0,
-    dict_allowed : dict = defaultdict(list),
     CHANGES: int = 6,
     freq_min: float = 0.2,
     N: int = 1,
@@ -534,8 +533,6 @@ def optimize_sequence_display_proteins(original_seq: str,
         Original DNA sequence to optimize.
     frame_offset : int, default=0
         Reading-frame offset (0, 1, or 2) used when grouping codons.
-    dict_allowed : dict, defaultdict(list)
-        Dictionnary of positions (keys,starting at 0) and AAs list (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
     CHANGES : int, default=6
         Maximum number of codon substitutions allowed.
     freq_min : float, default=0.2
