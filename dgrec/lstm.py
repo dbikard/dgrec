@@ -21,7 +21,8 @@ from tensorflow.keras.utils import register_keras_serializable
 from .example_data import get_example_data_dir
 import os
 import matplotlib.pyplot as plt
-from collections import Counter
+from collections import Counter,defaultdict
+from itertools import product
 EPS = 1e-8
 
 # %% ../nbs/API/09_lstm.ipynb #0af10dfc-65cc-4e39-a9a7-56a9b72ad7fa
@@ -510,6 +511,7 @@ from . import predictions
 
 def optimize_sequence_display_proteins(original_seq: str,
     frame_offset: int = 0,
+    dict_allowed_AAs : dict = defaultdict(list),
     CHANGES: int = 6,
     freq_min: float = 0.2,
     N: int = 1,
@@ -533,8 +535,11 @@ def optimize_sequence_display_proteins(original_seq: str,
         Original DNA sequence to optimize.
     frame_offset : int, default=0
         Reading-frame offset (0, 1, or 2) used when grouping codons.
+    dict_allowed_AAs : dict, defaultdict(list)
+        Dictionnary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
+        Selects for codons which do not reach (by adenine mutation) stop codons. If not possible, allow them anyway.
     CHANGES : int, default=6
-        Maximum number of codon substitutions allowed.
+        Maximum number of codon substitutions allowed (on top of the AAs requirements from the previous argument).
     freq_min : float, default=0.2
         Lowest usage frequency acceptable.
     N : int, default=1
@@ -583,6 +588,7 @@ def optimize_sequence_display_proteins(original_seq: str,
     record=predictions.optimize_sequence(
     original_seq,
     frame_offset,
+    dict_allowed_AAs,
     CHANGES,
     freq_min,
     N,
