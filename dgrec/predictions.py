@@ -513,7 +513,7 @@ def optimize_sequence(
     else:
         beam = valid_seq_reach_AAs(
     original_seq,
-    dict_allowed_AAs=dict_allowed_AAs,
+    dict_allowed=dict_allowed_AAs,
     frame_offset=frame_offset,
     freq_min=freq_min,
     codon_usage=codon_usage
