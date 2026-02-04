@@ -508,7 +508,7 @@ def optimize_sequence(
     result["New_Variant"]
     ```
     """
-    if not dict_allowed:
+    if not dict_allowed_AAs:
         beam = [original_seq]
     else:
         beam = valid_seq_reach_AAs(
