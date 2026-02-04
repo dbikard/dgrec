@@ -13,6 +13,8 @@ website:
           - API/07_utils.ipynb
           - API/08_cli.ipynb
           - API/09_lstm.ipynb
+          - API/10_library_size.ipynb
       - section: DGRec data analysis
         contents:
           - DGRec data analysis/00_mutation_distribution.ipynb
+          - DGRec data analysis/01_library_size_estimation.ipynb

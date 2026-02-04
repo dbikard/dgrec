@@ -6,4 +6,4 @@ from .genotypes_paired import get_genotypes_paired
 from .plotting import plot_mutations
 from .predictions import score,score_list,DGR_percentage,DGR_percentage_list
 from .encoding import encode_tr_list
-
+from . import utils, library_size
