@@ -7,8 +7,15 @@ Read the doc: https://dbikard.github.io/dgrec/
 
 ## Install
 
-First, install ViennaRNA via conda (required for predicting the activity
-of TR sequences):
+We recommend installing dgrec in a dedicated conda environment:
+
+``` sh
+conda create -n dgrec python=3.11
+conda activate dgrec
+```
+
+Install ViennaRNA (required for predicting the activity of TR
+sequences):
 
 ``` sh
 conda install -c conda-forge -c bioconda viennarna
