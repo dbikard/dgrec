@@ -461,7 +461,7 @@ def optimize_sequence(
     frame_offset : int, default=0
         Reading-frame offset (0, 1, or 2) used when grouping codons.
     dict_allowed_AAs : dict, defaultdict(list)
-        Dictionnary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
+        Dictionary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
         Selects for codons which do not reach (by adenine mutation) stop codons. If not possible, allow them anyway.
     CHANGES : int, default=6
         Maximum number of codon substitutions allowed (on top of the AAs requirements from the previous argument).

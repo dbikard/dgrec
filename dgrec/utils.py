@@ -179,7 +179,7 @@ def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
     amino_mut_dic={}
     for gen, n in gen_list:
         if "-" not in gen: #excludes insertion or deletions as they will lead to frameshifts
-            if "N" not in gen:  #exclue Ns
+            if "N" not in gen:  #exclude Ns
                 mut=get_prot_mut(gen, refseq, frame=frame, ori=ori)
                 if mut in amino_mut_dic:
                     amino_mut_dic[mut]+=n

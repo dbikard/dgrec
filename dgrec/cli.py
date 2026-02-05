@@ -18,7 +18,7 @@ from .genotypes import get_genotypes
 from .genotypes_paired import get_genotypes_paired
 
 # %% ../nbs/API/08_cli.ipynb #9437bf2d
-#Commande line interface
+#Command line interface
 @click.group()
 def dgrec():
     pass
@@ -27,7 +27,7 @@ def dgrec():
 @dgrec.command('genotypes')
 @click.argument('fastq', type=click.Path(exists=True))
 @click.argument('ref', type=click.Path(exists=True))
-@click.option('--umi_size', '-u', type=int, default=10, help="Number of nucleotides at the begining of the read that will be used as the UMI")
+@click.option('--umi_size', '-u', type=int, default=10, help="Number of nucleotides at the beginning of the read that will be used as the UMI")
 @click.option('--quality_threshold', '-q',type=int,  default=10, help="threshold value used to filter out reads of poor average quality")
 @click.option('--ignore_pos', '-i', type=list, default=[], multiple=True, help="list of positions that are ignored in the genotype, e.g. [0,1,149,150]")
 @click.option('--match', type=float, default=2., help="match parameter of the aligner")
