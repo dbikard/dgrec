@@ -9,14 +9,10 @@ import os
 import numpy as np
 from Bio import SeqIO
 import matplotlib.pyplot as plt
-import numpy as np
 from scipy import stats
 from typing import Dict, Any, List, Callable
-import numpy as np
 from scipy.stats import linregress
 from scipy.integrate import quad
-
-import matplotlib.pyplot as plt
 
 # %% ../nbs/API/10_library_size.ipynb #b26be281
 def find_best_breakpoint(counts: np.ndarray) -> tuple[int, float, float]:
