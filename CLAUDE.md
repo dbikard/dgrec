@@ -90,6 +90,38 @@ Mutations are comma-separated: `A50T,G75C,T150A` where format is `[RefBase][Posi
 - **ViennaRNA** is required for the encoding module (RNA secondary structure)
 - Pre-trained models are bundled in `dgrec/example_data/`
 
+## Testing in nbdev
+
+In nbdev, tests are regular notebook cells containing `assert` statements placed after the function they test.
+
+### Test cell pattern
+
+Each exported function should follow this pattern in the notebook:
+
+```
+[#| export cell with function definition]
+[visible demo cell showing usage]          ← shown in docs (no #| hide)
+[#| hide cell with assert-based tests]     ← hidden from docs, run by nbdev-test
+```
+
+- Every exported function must have at least one **visible demo cell** for the auto-generated documentation.
+- Test cells use `#| hide` so they run during `nbdev-test` but don't appear in docs.
+- Keep tests fast: use minimal inputs (1-2 sequences, small n values) for ML model tests.
+
+### Cell ordering matters
+
+Notebook cells execute top-to-bottom. A test cell can only reference functions and variables defined in **earlier** cells. If a function depends on another function defined later in the notebook, the test must be placed after both definitions.
+
+### Editing .ipynb files
+
+The `Edit` tool does not work on `.ipynb` files. Use one of:
+- `NotebookEdit` tool for single-cell replacements or insertions
+- Python scripts via `Bash` that manipulate the raw JSON for bulk changes
+
+### Shared code belongs in utils
+
+If the same constants or functions appear in multiple notebooks, consolidate them into `07_utils.ipynb` and import from `dgrec.utils` in other notebooks. This avoids drift between duplicate definitions.
+
 ## CI/CD
 
 - Tests run via `fastai/workflows/nbdev3-ci@master` on push/PR
