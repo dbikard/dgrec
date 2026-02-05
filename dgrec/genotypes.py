@@ -85,7 +85,7 @@ def correct_UMI_genotypes(UMI_gencounter: dict, #the output of the get_UMI_genot
                           reads_per_umi_thr=2 #only assign a genotype to a UMI if we have reads_per_umi_thr reads for that genotype or more
                           ) -> dict:
     """Keeps only the genotype with the most reads for each UMI.
-    Returns a dictionary with UMIs as keys and a tuple as value: (genotype string, number of reads)
+    Returns a dictionary with UMIs as keys and the genotype string as value.
     """
     UMI_gen_dict={}
     for umi in UMI_gencounter:
@@ -115,7 +115,8 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
                     save_umi_data: str = None, #path to the csv file where to save the details of the genotypes reads for each UMI. If None the data isn't saved.
                     **kwargs, #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                     ):
-    """Putting things together in a single wrapper function that takes the fastq as input and returns the list of genotypes."""
+    """Processes a single-end FASTQ file to extract UMI-corrected genotypes.
+    Returns a sorted list of (genotype_string, count) tuples."""
     UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, ref_read_size, quality_threshold, ignore_pos, **kwargs)
     if save_umi_data:
         with open(save_umi_data,"w", newline='') as handle: 
@@ -127,4 +128,3 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
     gen_list = genotype_UMI_counter(UMI_gen_dict)
     print("Number of genotypes:", len(gen_list))
     return gen_list
-    

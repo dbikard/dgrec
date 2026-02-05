@@ -47,8 +47,8 @@ def mut_rix(mutations):
 
 # %% ../nbs/API/07_utils.ipynb #5250d690
 def get_mutations(seqA,seqB, match=2, mismatch=-1, gap_open=-1, gap_extend=-.5):
-    """Aligns two sequences and returns a genotype string.
-    The string is a comma separated list of mutations.
+    """Aligns two sequences and returns a list of mutations.
+    Each mutation is a tuple of (reference_base, position, query_base).
     """
     align=pairwise2.align.globalms(seqA,seqB, match, mismatch, gap_open, gap_extend, one_alignment_only=True)[0]
     mutations=align2mut(align) 
@@ -57,8 +57,8 @@ def get_mutations(seqA,seqB, match=2, mismatch=-1, gap_open=-1, gap_extend=-.5):
 
 # %% ../nbs/API/07_utils.ipynb #22c3585a
 def get_mutations_noalign(seqA,seqB):
-    """Returns a genotype string.
-    The string is a comma separated list of mutations.
+    """Compares two equal-length sequences and returns a list of mutations without alignment.
+    Each mutation is a tuple of (reference_base, position_str, query_base).
     """
     assert(len(seqA)==len(seqB))
     mutations=[]
@@ -106,6 +106,8 @@ def is_dgrec(genotype:str, min_length=2, min_A_proportion=0.7) -> bool:
 
 # %% ../nbs/API/07_utils.ipynb #1594c9fb
 def genstr_to_seq(genstr,refseq):
+    """Reconstructs a mutated sequence by applying mutations from a genotype string to a reference sequence.
+    Handles substitutions, insertions, and deletions."""
     j=0
     seq=''
     for mut in str_to_mut(genstr):
@@ -127,6 +129,7 @@ def genstr_to_seq(genstr,refseq):
 
 # %% ../nbs/API/07_utils.ipynb #273589f5
 def reverse_complement(dna):
+    """Returns the reverse complement of a DNA sequence."""
     dna=dna.upper()
     # Dictionary to hold the complement of each base
     complement = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C','-': '-','N': 'N'}
@@ -139,10 +142,11 @@ def reverse_complement(dna):
     
     return reverse_complement_dna
 
-
-
 # %% ../nbs/API/07_utils.ipynb #d0bf4e81
 def get_prot_mut(genstr,refseq,frame=0,ori=1):
+    """Translates DNA-level mutations into protein-level mutations.
+    Applies the genotype to the reference, translates both in the given reading frame
+    and orientation, and returns a genotype string of amino acid changes."""
     mut_seq=genstr_to_seq(genstr,refseq)
     if ori==-1:
         refseq=reverse_complement(refseq)
@@ -167,9 +171,9 @@ def get_prot_mut(genstr,refseq,frame=0,ori=1):
     ref_prot=ref_prot[:L]
     return mut_to_str(get_mutations_noalign(ref_prot,mut_prot))
 
-
 # %% ../nbs/API/07_utils.ipynb #0ebd8019
 def parse_genotypes(genotypes_file):
+    """Reads a tab-separated genotypes file and returns a list of (genotype_string, count) tuples."""
     gen_list=[]
     with open(genotypes_file,"r") as handle: 
         reader = csv.reader(handle, delimiter='\t')
@@ -179,6 +183,8 @@ def parse_genotypes(genotypes_file):
 
 # %% ../nbs/API/07_utils.ipynb #c12ee4fa
 def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
+    """Converts a DNA genotype list to an amino acid genotype list.
+    Excludes genotypes with indels or Ns. Returns a sorted list of (aa_genotype_string, count) tuples."""
     amino_mut_dic={}
     for gen, n in gen_list:
         if "-" not in gen: #excludes insertion or deletions as they will lead to frameshifts
@@ -191,7 +197,6 @@ def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
     aa_mut_list=list(amino_mut_dic.items())
     aa_mut_list=sorted(aa_mut_list,key=lambda x: x[1],reverse=True)
     return aa_mut_list
-
 
 # %% ../nbs/API/07_utils.ipynb #0300357e
 def downsample_fastq_gz(input_file, output_file, num_reads=10000):
@@ -230,14 +235,14 @@ def get_basename_without_extension(file_path):
 
 # %% ../nbs/API/07_utils.ipynb #2a8b793d
 def pickle_save(data_in,file_name_out):
+    """Saves data to a file using pickle."""
     pickle_out = open(file_name_out,"wb")
     pickle.dump(data_in, pickle_out)
     pickle_out.close()
-    
-
 
 # %% ../nbs/API/07_utils.ipynb #f216a14d
 def pickle_load(file_name_in):
+    """Loads data from a pickle file."""
     pickle_in = open(file_name_in,"rb")
     data_out = pickle.load(pickle_in)
     return data_out
@@ -294,6 +299,8 @@ def make_dgr_oligos(target:str #TR DNA
 def reverse_comp_geno_list(geno_list:list # List of genotypes
                            ,ref_seq:str #string of the template sequence
                            ):
+    """Converts a genotype list to its reverse complement.
+    Mirrors mutation positions and complements bases relative to the reference sequence length."""
     l=len(ref_seq)
     gene_rev_dic={}
     for geno in geno_list:
@@ -319,9 +326,9 @@ def reverse_comp_geno_list(geno_list:list # List of genotypes
     geno_list_rev = list(gene_rev_dic.items())
     return geno_list_rev
 
-
 # %% ../nbs/API/07_utils.ipynb #8c50a208
 def remove_position(geno,pos_list):
+    """Removes mutations at the specified positions from a genotype string."""
     mut_split=geno.split(',')
     new_geno=[]
     for mut in mut_split:
@@ -329,10 +336,9 @@ def remove_position(geno,pos_list):
             new_geno.append(mut)
     return ','.join(new_geno)
 
-
-
 # %% ../nbs/API/07_utils.ipynb #a15df13b
 def remove_position_list(geno_list,pos_list):
+    """Removes mutations at specified positions from all genotypes in a list."""
     new_geno_list=[]
     for k in geno_list:
         geno_k=k[0]

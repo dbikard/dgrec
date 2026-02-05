@@ -29,6 +29,7 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
                    TR_range: Union[tuple,list] = None, #when specified creates a shaded box highlighting the position of the TR
                    ax=None, #makes it possible to pass matplotlib axis to easily configure and save plots
                    ):
+    """Plots a stacked bar chart of mutation counts at each position in the reference sequence."""
     
     if not plot_range:
         plot_range=[0,len(ref_seq)]
@@ -79,7 +80,6 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
     #fig.savefig(base_path+"Plots/eps/{}-{}_UMI_corrected_genotypes.eps".format(sample.Sample_ID,sample.Sample_Name), format='eps')
     #plt.close()
     return ax
-    
 
 # %% ../nbs/API/02_plotting.ipynb #6444c393
 def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype is a tuple: (string representation of the genotype, number of molecules)
@@ -90,6 +90,7 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
                    rev_comp=False,
                    ax=None, #makes it possible to pass matplotlib axis to easily configure and save plots
                    ):
+    """Plots mutation frequencies as percentages at each position, with optional reverse complement conversion."""
     
     if rev_comp==True:
         gen_list=reverse_comp_geno_list(gen_list,ref_seq)
@@ -166,6 +167,7 @@ def plot_mutations_percentage_protein(aa_mut_list, # list of genotypes. Each gen
                                        ref_prot, # reference sequence
                                        plot_range=None,  # limits the plot to the specified range
                                        ax=None):
+    """Plots amino acid mutation frequencies at each protein position with per-position entropy."""
    
     def rgb_to_hex(rgb):
         return mcolors.to_hex(rgb)
@@ -234,4 +236,3 @@ def plot_mutations_percentage_protein(aa_mut_list, # list of genotypes. Each gen
 
     ax.legend()
     return ax
-

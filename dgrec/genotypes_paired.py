@@ -34,6 +34,8 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                             N = None, #number of reads to consider (useful to get a quick view of the data without going through the whole fastq files). If None the whole data will be used.
                             **kwargs, #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                             ) -> dict:
+    """Processes paired-end FASTQ files to extract UMI-grouped genotypes.
+    Aligns forward and reverse reads to the reference, optionally requiring perfect agreement in overlapping regions."""
 
     align_param={"match":2,
                 "mismatch":-1, 
@@ -150,7 +152,8 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                         N = None, #number of reads to consider (useful to get a quick view of the data without going through the whole fastq files). If None the whole data will be used.
                         **kwargs, #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                         ):
-    """Putting things together in a single wrapper function that takes the fastq as input and returns the list of genotypes."""
+    """Processes paired-end FASTQ files to extract UMI-corrected genotypes.
+    Returns a sorted list of (genotype_string, count) tuples."""
     UMI_dict = get_UMI_genotype_paired(fastq_path_fwd, 
                                          fastq_path_rev, 
                                          ref_seq, 

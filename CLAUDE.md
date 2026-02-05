@@ -34,7 +34,8 @@ nbdev-preview
 # Clean notebook metadata
 nbdev-clean
 
-# Prepare for commit (clean + export)
+# Prepare for commit (clean + export + test)
+# This runs nbdev-clean, nbdev-export, and nbdev-test — no need to run them separately
 nbdev-prepare
 ```
 

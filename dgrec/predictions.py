@@ -42,7 +42,7 @@ def score(TR_seq:str #A string of the TR DNA sequence
 ,features=1 #The classifier model, no need to specify it (one feature by default). If two: uses the two features model
          ):
 
-    """Calculates the predicted score of a given TR sequence (1 = perfect TR and 0 = crappy TR).  If features=2, returns the score according to each feature (better to have both high)."""
+    """Calculates the predicted score of a given TR sequence (1 = perfect TR and 0 = poorly-performing TR).  If features=2, returns the score according to each feature (better to have both high)."""
     encoded_TR=encoding.encode_tr_list([TR_seq],features)
     if features == 1:
         score=np.round(model_Sp.predict_proba([encoded_TR[0]])[:,1],decimals=2).item()
@@ -81,7 +81,7 @@ features=1 #The number of features to use
 def DGR_percentage(TR_seq:str #A string of the TR DNA sequence
          ):
 
-    """Calculates the predicted DGR mutagenesis percentage of a given TR sequence (100 = perfect TR and 0 = crappy TR)"""
+    """Calculates the predicted DGR mutagenesis percentage of a given TR sequence (100 = perfect TR and 0 = poorly-performing TR)."""
     encoded_TR=encoding.encode_tr_list([TR_seq],2)
     rate=model_whole.predict(encoded_TR)[0]
     return 10**rate
@@ -161,6 +161,8 @@ def valid_seq_reach_AAs(
     freq_min=0.2,
     codon_usage=None
 ):
+    """Checks whether a DNA sequence can reach a set of target amino acids through adenine mutagenesis
+    at each codon position."""
     # No constraints → original sequence only
     if not dict_allowed:
         return [seq]

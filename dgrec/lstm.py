@@ -51,6 +51,7 @@ def masked_categorical_crossentropy(y_true, y_pred):
     return tf.reduce_mean(seq_loss)
 
 def masked_accuracy(y_true, y_pred):
+    """Computes accuracy ignoring padding positions (all-zero rows in y_true)."""
     # y_true, y_pred shape: (batch, time, vocab_size)
     mask = K.cast(K.any(K.not_equal(y_true, 0), axis=-1), K.floatx())  # shape (batch, time)
 
@@ -62,14 +63,15 @@ def masked_accuracy(y_true, y_pred):
 
     return K.sum(masked_matches) / K.sum(mask)
     
-# One-hot encoding function for DNA sequences (A, C, G, T)
 def one_hot_encode(sequence, vocab_size=4):
+    """Converts a DNA sequence string to a one-hot encoded numpy array of shape (len, vocab_size)."""
     mapping = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
     integer_encoded = [mapping[base] for base in sequence]
     onehot_encoded = to_categorical(integer_encoded, num_classes=vocab_size)
     return onehot_encoded
 
 def one_hot_decode(encoded_sequence):
+    """Converts a one-hot encoded array back to a DNA sequence string."""
     # Reverse the mapping used in encoding
     reverse_mapping = {0: 'A', 1: 'C', 2: 'G', 3: 'T'}
     
@@ -246,10 +248,12 @@ def sequences_same_length(sequences):
 
 
 def pad_sequence(seq, maxlen, padding_value=0):
+    """Right-pads a 2D array to the specified length with padding_value."""
     pad_width = ((0, maxlen - seq.shape[0]), (0, 0))  # pad rows only
     return np.pad(seq, pad_width, mode='constant', constant_values=padding_value)
 
 def to_tensor_inputs(*args):
+    """Converts numpy arrays to TensorFlow tensors."""
     return [tf.convert_to_tensor(x) for x in args]
 
 # %% ../nbs/API/09_lstm.ipynb #8a80d927-30cc-4946-bfc5-3fb934471726
