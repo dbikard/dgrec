@@ -11,6 +11,7 @@ import gzip
 import itertools
 import os
 import csv
+import pickle
 from . import pairwise2
 from .pairwise2 import format_alignment
 from Bio.Align import PairwiseAligner
