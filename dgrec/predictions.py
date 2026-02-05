@@ -2,11 +2,9 @@
 
 # %% auto #0
 __all__ = ['data_path', 'model_name', 'model_path', 'model_Sp', 'model_name2', 'model_path2', 'model_Avd_Sp', 'model_name_whole',
-           'model_path_whole', 'model_whole', 'codon_usage_ecoli', 'genetic_code', 'CODON_TO_AA', 'codons_stop',
-           'codons_reaching_stop', 'AA', 'AA_IDS', 'AA_TO_CODONS', 'score', 'score_list', 'DGR_percentage',
-           'DGR_percentage_list', 'nt_to_codons', 'codons_to_aa', 'nt_prot', 'pareto_front',
-           'codons_compatible_with_AA', 'valid_seq_reach_AAs', 'propose_single_codon_changes', 'evaluate_sequences',
-           'optimize_sequence']
+           'model_path_whole', 'model_whole', 'score', 'score_list', 'DGR_percentage', 'DGR_percentage_list',
+           'pareto_front', 'codons_compatible_with_AA', 'valid_seq_reach_AAs', 'propose_single_codon_changes',
+           'evaluate_sequences', 'optimize_sequence']
 
 # %% ../nbs/API/05_predictions.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import pickle
@@ -20,6 +18,10 @@ from itertools import product
 import matplotlib.pyplot as plt
 from . import encoding
 from collections import defaultdict
+from .utils import (codon_usage_ecoli, genetic_code, CODON_TO_AA,
+                          codons_stop, codons_reaching_stop, AA, AA_IDS,
+                          AA_TO_CODONS, nt_to_codons, codons_to_aa, nt_prot)
+
 
 # %% ../nbs/API/05_predictions.ipynb #0af10dfc-65cc-4e39-a9a7-56a9b72ad7fa
 data_path=get_example_data_dir()
@@ -100,136 +102,6 @@ TR_name_list:list, #A list of strings of TRs names
     return score_df
 
 # %% ../nbs/API/05_predictions.ipynb #3d404065-2302-4eb3-b36b-c077b3432cc9
-codon_usage_ecoli = {
-    "F": {"TTT": 0.57, "TTC": 0.43},
-    "L": {"TTA": 0.15, "TTG": 0.12, "CTT": 0.12, "CTC": 0.10, "CTA": 0.05, "CTG": 0.46},
-    "S": {"TCT": 0.11, "TCC": 0.11, "TCA": 0.15, "TCG": 0.16, "AGT": 0.14, "AGC": 0.33},
-    "Y": {"TAT": 0.53, "TAC": 0.47},
-    "*": {"TAA": 0.64, "TAG": 0.00, "TGA": 0.36},
-    "C": {"TGT": 0.42, "TGC": 0.58},
-    "W": {"TGG": 1.00},
-    "P": {"CCT": 0.17, "CCC": 0.13, "CCA": 0.14, "CCG": 0.55},
-    "H": {"CAT": 0.55, "CAC": 0.45},
-    "Q": {"CAA": 0.30, "CAG": 0.70},
-    "R": {"CGT": 0.36, "CGC": 0.44, "CGA": 0.07, "CGG": 0.07, "AGA": 0.07, "AGG": 0.00},
-    "I": {"ATT": 0.58, "ATC": 0.35, "ATA": 0.07},
-    "M": {"ATG": 1.00},
-    "T": {"ACT": 0.16, "ACC": 0.47, "ACA": 0.13, "ACG": 0.24},
-    "N": {"AAT": 0.47, "AAC": 0.53},
-    "K": {"AAA": 0.73, "AAG": 0.27},
-    "V": {"GTT": 0.25, "GTC": 0.18, "GTA": 0.17, "GTG": 0.40},
-    "A": {"GCT": 0.11, "GCC": 0.31, "GCA": 0.20, "GCG": 0.38},
-    "D": {"GAT": 0.65, "GAC": 0.35},
-    "E": {"GAA": 0.70, "GAG": 0.30},
-    "G": {"GGT": 0.29, "GGC": 0.46, "GGA": 0.13, "GGG": 0.12}
-}
-
-# Genetic code: codon -> amino acid
-genetic_code = {}
-for aa, codons in codon_usage_ecoli.items():
-    for codon in codons:
-        genetic_code[codon] = aa
-
-CODON_TO_AA = {
-    'ATA': 'I', 'ATC': 'I', 'ATT': 'I', 'ATG': 'M',
-    'ACA': 'T', 'ACC': 'T', 'ACG': 'T', 'ACT': 'T',
-    'AAC': 'N', 'AAT': 'N', 'AAA': 'K', 'AAG': 'K',
-    'AGC': 'S', 'AGT': 'S', 'AGA': 'R', 'AGG': 'R',
-    'CTA': 'L', 'CTC': 'L', 'CTG': 'L', 'CTT': 'L',
-    'CCA': 'P', 'CCC': 'P', 'CCG': 'P', 'CCT': 'P',
-    'CAC': 'H', 'CAT': 'H', 'CAA': 'Q', 'CAG': 'Q',
-    'CGA': 'R', 'CGC': 'R', 'CGG': 'R', 'CGT': 'R',
-    'GTA': 'V', 'GTC': 'V', 'GTG': 'V', 'GTT': 'V',
-    'GCA': 'A', 'GCC': 'A', 'GCG': 'A', 'GCT': 'A',
-    'GAC': 'D', 'GAT': 'D', 'GAA': 'E', 'GAG': 'E',
-    'GGA': 'G', 'GGC': 'G', 'GGG': 'G', 'GGT': 'G',
-    'TCA': 'S', 'TCC': 'S', 'TCG': 'S', 'TCT': 'S',
-    'TTC': 'F', 'TTT': 'F', 'TTA': 'L', 'TTG': 'L',
-    'TAC': 'Y', 'TAT': 'Y', 'TAA': '*', 'TAG': '*',
-    'TGC': 'C', 'TGT': 'C', 'TGA': '*', 'TGG': 'W'
-}
-
-codons_stop=set(['TGA','TAG','TAA'])
-codons_reaching_stop=set(['TGA','TAG','TAA','AGA','AAA','AAG'])
-
-AA = '-ACDEFGHIKLMNPQRSTVWY'
-AA_IDS = {k: i for i, k in enumerate(AA)}
-
-
-AA_TO_CODONS = {
-    'A': ['GCT', 'GCC', 'GCA', 'GCG'],  # Alanine
-    'C': ['TGT', 'TGC'],               # Cysteine
-    'D': ['GAT', 'GAC'],               # Aspartic acid
-    'E': ['GAA', 'GAG'],               # Glutamic acid
-    'F': ['TTT', 'TTC'],               # Phenylalanine
-    'G': ['GGT', 'GGC', 'GGA', 'GGG'], # Glycine
-    'H': ['CAT', 'CAC'],               # Histidine
-    'I': ['ATT', 'ATC', 'ATA'],        # Isoleucine
-    'K': ['AAA', 'AAG'],               # Lysine
-    'L': ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],  # Leucine
-    'M': ['ATG'],                      # Methionine (Start codon)
-    'N': ['AAT', 'AAC'],               # Asparagine
-    'P': ['CCT', 'CCC', 'CCA', 'CCG'], # Proline
-    'Q': ['CAA', 'CAG'],               # Glutamine
-    'R': ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],  # Arginine
-    'S': ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],  # Serine
-    'T': ['ACT', 'ACC', 'ACA', 'ACG'], # Threonine
-    'V': ['GTT', 'GTC', 'GTA', 'GTG'], # Valine
-    'W': ['TGG'],                      # Tryptophan
-    'Y': ['TAT', 'TAC'],               # Tyrosine
-    '*': ['TAA', 'TAG', 'TGA'],        # Stop codons
-    '-': []                            # Gap (no codons)
-}
-
-def nt_to_codons(nt_sequence:str #A string corresponding to a nucleotide sequence
-                ):
-    """
-    Converts a nucleotide sequence into a list of codons.
-    
-    Args:
-        nt_sequence (str): A string of nucleotides (e.g., "ATGGCATGA").
-        
-    Returns:
-        list: A list of codons (e.g., ['ATG', 'GCA', 'TGA']).
-    """
-    # Ensure the sequence length is a multiple of 3 by trimming extra nucleotides
-    trimmed_sequence = nt_sequence[:len(nt_sequence) // 3 * 3]
-    
-    # Split the sequence into codons (groups of 3 nucleotides)
-    codons = [trimmed_sequence[i:i+3] for i in range(0, len(trimmed_sequence), 3)]
-    
-    return codons
-
-def codons_to_aa(codons:str #A list of strings corresponding to codons
-                ):
-    """
-    Converts a list of codons into a sequence of amino acids.
-    
-    Args:
-        codons (list): A list of codon strings (e.g., ['ATG', 'GCA', 'TGA']).
-        
-    Returns:
-        str: The translated amino acid sequence (e.g., 'M*A').
-    """
-    aa_sequence = ""
-    for codon in codons:
-        # Convert codon to amino acid; default to 'X' for invalid codons
-        aa_sequence += CODON_TO_AA.get(codon, 'X')
-    return aa_sequence
-
-def nt_prot(nt #A nucleotide sequence
-           ):
-    """
-    Converts a nucleotide into a sequence of amino acids.
-    
-    Args:
-        nt (str): A nucleotide sequence (DNA) string.
-        
-    Returns:
-        str: The translated amino acid sequence (e.g., 'M*A').
-    """
-    return codons_to_aa(nt_to_codons(nt))
-
 def pareto_front(sequences #Dataframe containing a sequence and its two scores
                 ):
     """
