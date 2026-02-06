@@ -101,13 +101,46 @@ Each exported function should follow this pattern in the notebook:
 
 ```
 [#| export cell with function definition]
-[visible demo cell showing usage]          ← shown in docs (no #| hide)
+[visible demo cell showing usage]          ← IMMEDIATELY after, shown in docs
 [#| hide cell with assert-based tests]     ← hidden from docs, run by nbdev-test
 ```
 
-- Every exported function must have at least one **visible demo cell** for the auto-generated documentation.
+**IMPORTANT: Demo cell placement**
+- The visible demo cell MUST be the cell immediately following the function definition
+- Do NOT place another `#| export` cell between a function and its demo
+- If a function needs setup (e.g., loading data), the setup should come BEFORE the function definition, not between the definition and demo
+- Every exported function must have at least one visible demo cell for the auto-generated documentation
+
 - Test cells use `#| hide` so they run during `nbdev-test` but don't appear in docs.
 - Keep tests fast: use minimal inputs (1-2 sequences, small n values) for ML model tests.
+
+### Import rules
+
+nbdev requires imports to be in their own dedicated cells - **never mix `import` statements with other code**. This applies to ALL cells (visible, hidden, and export).
+
+**Where to put imports:**
+- **Module imports** (`numpy`, `os`, etc.): Add to the `#| export` imports cell at the top
+- **Test-only imports** (`tempfile`, `Counter`): Check if already imported in the export cell. If not, create a dedicated `#| hide` cell containing just the import before the test cells that need it
+- **Example data imports** (`from dgrec.example_data import ...`): Use the existing `#| hide` import cell near the top
+
+**Common pattern for test dependencies:**
+```python
+#| hide
+import tempfile
+```
+```python
+#| hide
+# Test using tempfile
+with tempfile.TemporaryDirectory() as tmpdir:
+    ...
+```
+
+### Cell visibility rules for docs
+
+When adding demo cells to notebooks:
+- **Main demo cells** (no `#| hide`) should be self-contained or only reference visible cells
+- If a demo cell depends on variables from hidden cells (like example data setup), add `#| hide` to avoid execution errors in `nbdev-preview`
+- Always test with both `nbdev-test` AND `nbdev-preview` after adding new cells
 
 ### Cell ordering matters
 

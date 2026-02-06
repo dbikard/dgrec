@@ -12,14 +12,11 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import seaborn as sns
 import os
-import csv
 import numpy as np
 from Bio import SeqIO
 from typing import Union
 from .utils import str_to_mut, reverse_comp_geno_list, reverse_complement, get_prot_mut, parse_genotypes, get_aa_mut_list
-import dgrec.utils
 from Bio.Seq import Seq
-
 
 # %% ../nbs/API/02_plotting.ipynb #6dcee1d6
 def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple: (string representation of the genotype, number of molecules)
@@ -28,14 +25,18 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
                    plot_range: Union[tuple,list] = None,  #limits the plot to the specified range
                    TR_range: Union[tuple,list] = None, #when specified creates a shaded box highlighting the position of the TR
                    ax=None, #makes it possible to pass matplotlib axis to easily configure and save plots
+                   savefig: str = None, #path to save the figure (e.g. 'output.png')
+                   dpi: int = 300, #resolution for saved figure
                    ):
-    """Plots a stacked bar chart of mutation counts at each position in the reference sequence."""
+    """Plots a stacked bar chart of mutation counts at each position.
+    
+    Mutations outside the plot_range are excluded from the visualization."""
     
     if not plot_range:
         plot_range=[0,len(ref_seq)]
 
     L=plot_range[1]-plot_range[0]
-    ref_seq=ref_seq[plot_range[0]:plot_range[1]]
+    ref_seq_range=ref_seq[plot_range[0]:plot_range[1]]
 
     symbols=["A","T","G","C","del","ins","N"]
     mut_arrays=dict([(s,np.zeros(L)) for s in symbols])
@@ -43,20 +44,15 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
         g=gen.split(',')
         for mut in g:
             if mut:
-                mut_from=mut[0]
                 ix=int(mut[1:-1])
                 k=mut[-1]
                 if k=="-":
                     k="del"
                 elif mut[0]=="-":
                     k="ins"
-                mut_arrays[k][ix]+=n  
-
-
-    for k in mut_arrays:
-        mut_arrays[k]=mut_arrays[k][plot_range[0]:plot_range[1]]
-
-
+                # Only add mutations within plot_range, using relative index
+                if plot_range[0] <= ix < plot_range[1]:
+                    mut_arrays[k][ix - plot_range[0]] += n
 
     labels=np.array(range(L))
 
@@ -69,16 +65,18 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
         sns.barplot(x=labels,y=y,color=colors[i],ax=ax,label=s)
         y-=mut_arrays[s]
 
-    ax.set_xticks(range(len(ref_seq)))
-    ax.set_xticklabels(list(ref_seq))
+    ax.set_xticks(range(len(ref_seq_range)))
+    ax.set_xticklabels(list(ref_seq_range))
     ax.set_ylabel("number of molecules")
     ax.set_title(sample_name)
     if TR_range:
-        ax.axvspan(max(plot_range[0],TR_range[0]),min(TR_range[1],plot_range[1]),alpha=0.1)
+        ax.axvspan(max(plot_range[0],TR_range[0])-plot_range[0],min(TR_range[1],plot_range[1])-plot_range[0],alpha=0.1)
     ax.legend()
-    #fig.savefig(base_path+"Plots/png/{}-{}_UMI_corrected_genotypes.png".format(sample.Sample_ID,sample.Sample_Name), dpi=300)
-    #fig.savefig(base_path+"Plots/eps/{}-{}_UMI_corrected_genotypes.eps".format(sample.Sample_ID,sample.Sample_Name), format='eps')
-    #plt.close()
+    
+    if savefig:
+        fig = ax.get_figure()
+        fig.savefig(savefig, dpi=dpi, bbox_inches='tight')
+    
     return ax
 
 # %% ../nbs/API/02_plotting.ipynb #6444c393
@@ -89,8 +87,13 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
                    TR_range: Union[tuple,list] = None, #when specified creates a shaded box highlighting the position of the TR
                    rev_comp=False,
                    ax=None, #makes it possible to pass matplotlib axis to easily configure and save plots
+                   savefig: str = None, #path to save the figure (e.g. 'output.png')
+                   dpi: int = 300, #resolution for saved figure
                    ):
-    """Plots mutation frequencies as percentages at each position, with optional reverse complement conversion."""
+    """Plots mutation frequencies as percentages at each position.
+    
+    Supports reverse complement conversion. Mutations outside the plot_range
+    are excluded. Returns the axes and the total percentage of mutagenized molecules."""
     
     if rev_comp==True:
         gen_list=reverse_comp_geno_list(gen_list,ref_seq)
@@ -100,13 +103,12 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
         plot_range=[0,len(ref_seq)]
 
     L=plot_range[1]-plot_range[0]
-    ref_seq=ref_seq[plot_range[0]:plot_range[1]]
+    ref_seq_range=ref_seq[plot_range[0]:plot_range[1]]
 
     count_geno=0
     count_muta=0
     for gen, n in gen_list:
         count_geno+=n
-
 
     symbols=["A","T","G","C","del","ins","N"]
     mut_arrays=dict([(s,np.zeros(L)) for s in symbols])
@@ -116,20 +118,18 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
             count_muta+=n
             for mut in g:
                 if mut:
-                    mut_from=mut[0]
                     ix=int(mut[1:-1])
                     k=mut[-1]
                     if k=="-":
                         k="del"
                     elif mut[0]=="-":
                         k="ins"
-                    mut_arrays[k][ix]+=n  
-
+                    # Only add mutations within plot_range, using relative index
+                    if plot_range[0] <= ix < plot_range[1]:
+                        mut_arrays[k][ix - plot_range[0]] += n
 
     for k in mut_arrays:
-        mut_arrays[k]=100*(mut_arrays[k][plot_range[0]:plot_range[1]])/count_geno
-
-
+        mut_arrays[k]=100*mut_arrays[k]/count_geno
 
     labels=np.array(range(L))
 
@@ -142,12 +142,12 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
         sns.barplot(x=labels,y=y,color=colors[i],ax=ax,label=s)
         y-=mut_arrays[s]
 
-    ax.set_xticks(range(len(ref_seq)))
-    ax.set_xticklabels(list(ref_seq))
+    ax.set_xticks(range(len(ref_seq_range)))
+    ax.set_xticklabels(list(ref_seq_range))
     ax.set_ylabel("Percentage of mutated bases")
     ax.set_title(sample_name)
     if TR_range:
-        ax.axvspan(max(plot_range[0],TR_range[0]),min(TR_range[1],plot_range[1]),alpha=0.1)
+        ax.axvspan(max(plot_range[0],TR_range[0])-plot_range[0],min(TR_range[1],plot_range[1])-plot_range[0],alpha=0.1)
     
     textstr = f'Total % of mutagenized molecules = {np.round(100*count_muta/count_geno,2)} %'
     # these are matplotlib.patch.Patch properties
@@ -157,33 +157,40 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
     ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14,verticalalignment='top', bbox=props)
 
     ax.legend()
-    #fig.savefig(base_path+"Plots/png/{}-{}_UMI_corrected_genotypes.png".format(sample.Sample_ID,sample.Sample_Name), dpi=300)
-    #fig.savefig(base_path+"Plots/eps/{}-{}_UMI_corrected_genotypes.eps".format(sample.Sample_ID,sample.Sample_Name), format='eps')
-    #plt.close()
+    
+    if savefig:
+        fig = ax.get_figure()
+        fig.savefig(savefig, dpi=dpi, bbox_inches='tight')
+    
     return (ax,np.round(100*count_muta/count_geno,2))
 
 # %% ../nbs/API/02_plotting.ipynb #1367e66e
 def plot_mutations_percentage_protein(aa_mut_list, # list of genotypes. Each genotype is a tuple: (string representation of the genotype, number of molecules)
                                        ref_prot, # reference sequence
                                        plot_range=None,  # limits the plot to the specified range
-                                       ax=None):
-    """Plots amino acid mutation frequencies at each protein position with per-position entropy."""
+                                       ax=None, # makes it possible to pass matplotlib axis to easily configure and save plots
+                                       savefig: str = None, # path to save the figure (e.g. 'output.png')
+                                       dpi: int = 300, # resolution for saved figure
+                                       ):
+    """Plots amino acid mutation frequencies at each protein position.
+    
+    Shows stacked bars of mutation percentages with the count of unique amino acids
+    observed at each position displayed below the reference residue."""
    
     def rgb_to_hex(rgb):
         return mcolors.to_hex(rgb)
     
     def get_colormap_palette(colormap_name, num_colors):
-        colormap = cm.get_cmap(colormap_name, num_colors)
+        colormap = plt.get_cmap(colormap_name, num_colors)
         return [rgb_to_hex(colormap(i)) for i in range(num_colors)]
 
     if not plot_range:
         plot_range=[0,len(ref_prot)]
 
     L = plot_range[1] - plot_range[0]
-    ref_prot = ref_prot[plot_range[0]:plot_range[1]]
+    ref_prot_range = ref_prot[plot_range[0]:plot_range[1]]
 
     count_geno = 0
-    count_muta = 0
     for gen, n in aa_mut_list:
         count_geno += n
 
@@ -196,16 +203,16 @@ def plot_mutations_percentage_protein(aa_mut_list, # list of genotypes. Each gen
     for gen, n in aa_mut_list:
         if gen != '':
             g = gen.split(',')
-            count_muta += n
             for mut in g:
                 if mut:
-                    mut_from = mut[0]
                     ix = int(mut[1:-1])
                     k = mut[-1]
-                    mut_arrays[k][ix] += n  
+                    # Only add mutations within plot_range, using relative index
+                    if plot_range[0] <= ix < plot_range[1]:
+                        mut_arrays[k][ix - plot_range[0]] += n
 
     for k in mut_arrays:
-        mut_arrays[k] = 100 * (mut_arrays[k][plot_range[0]:plot_range[1]]) / count_geno
+        mut_arrays[k] = 100 * mut_arrays[k] / count_geno
 
     labels = np.array(range(L))
 
@@ -224,15 +231,19 @@ def plot_mutations_percentage_protein(aa_mut_list, # list of genotypes. Each gen
             if mut_arrays[amino][k]>0:
                 count_unique_amino[k]+=1
 
-    ax.set_xticks(range(len(ref_prot)))
+    ax.set_xticks(range(len(ref_prot_range)))
 
-    xtick_labels = [f'{label1}\n\n{label2}' for label1, label2 in zip(list(ref_prot), count_unique_amino)]
+    xtick_labels = [f'{label1}\n\n{label2}' for label1, label2 in zip(list(ref_prot_range), count_unique_amino)]
 
     # Set the xtick labels
     ax.set_xticklabels(xtick_labels)
 
-    # ax.set_xticklabels(list(ref_seq))
     ax.set_ylabel("Percentage of mutated amino acid")
 
     ax.legend()
+    
+    if savefig:
+        fig = ax.get_figure()
+        fig.savefig(savefig, dpi=dpi, bbox_inches='tight')
+    
     return ax
