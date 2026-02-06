@@ -135,13 +135,6 @@ with tempfile.TemporaryDirectory() as tmpdir:
     ...
 ```
 
-### Cell visibility rules for docs
-
-When adding demo cells to notebooks:
-- **Main demo cells** (no `#| hide`) should be self-contained or only reference visible cells
-- If a demo cell depends on variables from hidden cells (like example data setup), add `#| hide` to avoid execution errors in `nbdev-preview`
-- Always test with both `nbdev-test` AND `nbdev-preview` after adding new cells
-
 ### Cell ordering matters
 
 Notebook cells execute top-to-bottom. A test cell can only reference functions and variables defined in **earlier** cells. If a function depends on another function defined later in the notebook, the test must be placed after both definitions.
