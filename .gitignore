@@ -156,3 +156,6 @@ checklink/cookies.txt
 
 # Claude Code local instructions
 CLAUDE.local.md
+
+# Paper PDFs
+*.pdf
