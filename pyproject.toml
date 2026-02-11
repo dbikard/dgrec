@@ -12,7 +12,7 @@ license = {text = "Apache-2.0"}
 authors = [{name = "David Bikard", email = "david.bikard@pasteur.fr"}]
 keywords = ['nbdev', 'jupyter', 'notebook', 'python']
 classifiers = ["Natural Language :: English", "Intended Audience :: Developers", "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only"]
-dependencies = ['fastcore', 'pandas', 'biopython', 'click', 'matplotlib', 'seaborn', 'tqdm', 'scikit-learn==1.7.1', 'tensorflow==2.17', 'logomaker', 'svgwrite']
+dependencies = ['fastcore', 'pandas', 'biopython', 'click', 'matplotlib', 'seaborn', 'tqdm', 'scikit-learn==1.7.1', 'logomaker', 'svgwrite']
 
 [project.urls]
 Repository = "https://github.com/dbikard/dgrec"
@@ -22,6 +22,7 @@ Documentation = "https://dbikard.github.io/dgrec"
 dgrec = "dgrec._modidx:d"
 
 [project.optional-dependencies]
+lstm = ['tensorflow==2.17']
 dev = ['ViennaRNA', 'cython']
 
 
