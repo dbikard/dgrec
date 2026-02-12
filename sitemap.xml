@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://dbikard.github.io/dgrec/DGRec data analysis/mutation_distribution.html</loc>
+    <lastmod>2026-02-12T16:55:14.042Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/plotting.html</loc>
+    <lastmod>2026-02-12T16:55:13.896Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/analysis.html</loc>
+    <lastmod>2026-02-12T16:55:13.822Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/lstm.html</loc>
+    <lastmod>2026-02-12T16:55:14.083Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/encoding.html</loc>
+    <lastmod>2026-02-12T16:55:13.878Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/cli.html</loc>
+    <lastmod>2026-02-12T16:55:13.984Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/index.html</loc>
+    <lastmod>2026-02-12T16:55:13.754Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/utils.html</loc>
+    <lastmod>2026-02-12T16:55:14.179Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/genotypes_paired.html</loc>
+    <lastmod>2026-02-12T16:55:13.909Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/genotypes.html</loc>
+    <lastmod>2026-02-12T16:55:13.902Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/predictions.html</loc>
+    <lastmod>2026-02-12T16:55:13.996Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/API/library_size.html</loc>
+    <lastmod>2026-02-12T16:55:14.067Z</lastmod>
+  </url>
+  <url>
+    <loc>https://dbikard.github.io/dgrec/DGRec data analysis/01_library_size_estimation.html</loc>
+    <lastmod>2026-02-12T16:55:14.149Z</lastmod>
+  </url>
+</urlset>
