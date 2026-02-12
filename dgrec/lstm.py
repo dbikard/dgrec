@@ -45,44 +45,44 @@ def _require_tensorflow():
 
 # %% ../nbs/API/09_lstm.ipynb #0af10dfc-65cc-4e39-a9a7-56a9b72ad7fa
 if _TF_AVAILABLE:
-    @register_keras_serializable(package="custom_losses")
-    def masked_categorical_crossentropy(y_true, y_pred):
-        """
-        y_true: one-hot (batch, time, vocab)
-        y_pred: probs (batch, time, vocab)
-        Padding rows in y_true assumed to be all zeros.
-        Returns: scalar loss (averaged over examples)
-        """
-        # per-timestep categorical CE -> shape (batch, time)
+    # --- Custom loss and metrics ---
+    @tf.keras.utils.register_keras_serializable(package="custom_losses")
+    def masked_categorical_crossentropy(y_true, y_pred, mask=None):
         per_timestep_loss = tf.keras.losses.categorical_crossentropy(y_true, y_pred)
-        # mask = 1 where a true label exists (any non-zero in last axis)
-        mask = tf.reduce_max(tf.abs(y_true), axis=-1)  # shape (batch, time)
-        mask = tf.cast(mask, per_timestep_loss.dtype)
-
-        # average loss per sequence (sum over time / count valid time steps)
-        seq_loss = tf.reduce_sum(per_timestep_loss * mask, axis=1) \
-                   / (tf.reduce_sum(mask, axis=1) + EPS)
-
-        # average across batch
-        return tf.reduce_mean(seq_loss)
-
-    def masked_accuracy(y_true, y_pred):
-        """Computes accuracy ignoring padding positions (all-zero rows in y_true)."""
-        # y_true, y_pred shape: (batch, time, vocab_size)
-        mask = K.cast(K.any(K.not_equal(y_true, 0), axis=-1), K.floatx())  # shape (batch, time)
-
-        y_true_labels = K.argmax(y_true, axis=-1)
-        y_pred_labels = K.argmax(y_pred, axis=-1)
-
-        matches = K.cast(K.equal(y_true_labels, y_pred_labels), K.floatx())
-        masked_matches = matches * mask
-
-        return K.sum(masked_matches) / K.sum(mask)
+        if mask is not None:
+            if len(mask.shape) == 3:
+                mask = tf.reduce_max(mask, axis=-1)
+            per_timestep_loss *= mask
+            loss = tf.reduce_sum(per_timestep_loss) / (tf.reduce_sum(mask) + EPS)
+        else:
+            mask = tf.cast(tf.reduce_max(tf.abs(y_true), axis=-1) > 0, tf.float32)
+            per_timestep_loss *= mask
+            loss = tf.reduce_sum(per_timestep_loss) / (tf.reduce_sum(mask) + EPS)
+        return loss
+    
+    @tf.keras.utils.register_keras_serializable(package="custom_metrics")
+    def masked_accuracy(y_true, y_pred, mask=None):
+        mask_internal = tf.cast(tf.reduce_max(tf.abs(y_true), axis=-1) > 0, tf.float32) if mask is None else tf.cast(mask, tf.float32)
+        if len(mask_internal.shape) == 3:
+            mask_internal = tf.reduce_max(mask_internal, axis=-1)
+        y_true_labels = tf.argmax(y_true, axis=-1)
+        y_pred_labels = tf.argmax(y_pred, axis=-1)
+        matches = tf.cast(tf.equal(y_true_labels, y_pred_labels), tf.float32) * mask_internal
+        return tf.reduce_sum(matches) / (tf.reduce_sum(mask_internal) + EPS)
+    
+    @tf.keras.utils.register_keras_serializable()
+    class DetachMask(layers.Layer):
+        def call(self, inputs):
+            return tf.identity(inputs)
+        def compute_mask(self, inputs, mask=None):
+            return None
 else:
     def masked_categorical_crossentropy(y_true, y_pred):
         _require_tensorflow()
 
     def masked_accuracy(y_true, y_pred):
+        _require_tensorflow()
+    def DetachMask(layer):
         _require_tensorflow()
 
 def one_hot_encode(sequence, vocab_size=4):
@@ -198,7 +198,15 @@ def _get_models():
         data_path = get_example_data_dir()
         model_name = 'LSTM_model_8_16.keras'
         model_path = os.path.join(data_path, model_name)
-        model_TR_to_VR = load_model(model_path, custom_objects={"masked_accuracy": masked_accuracy})
+        # --- Load your full trained model first ---
+        model_TR_to_VR = tf.keras.models.load_model(
+            model_path, #"LSTM_model_8_16_tf220.keras"
+            custom_objects={
+                'masked_categorical_crossentropy': masked_categorical_crossentropy,
+                'masked_accuracy': masked_accuracy,
+                'DetachMask': DetachMask  # placeholder for custom DetachMask
+            }
+        )
         _models_cache['firstmodel'], _models_cache['secondmodel'] = separate_model(model_TR_to_VR)
     return _models_cache['firstmodel'], _models_cache['secondmodel']
 
