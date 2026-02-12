@@ -119,7 +119,7 @@ Mutations are comma-separated: `A50T,G75C,T150A` where format is `[RefBase][Posi
 
 ## Dependencies
 
-- **scikit-learn==1.7.1** and **tensorflow[and-cuda]==2.17** are pinned for model compatibility
+- **scikit-learn==1.7.1** is pinned for model compatibility, **tensorflow[and-cuda]>=2.17** for the LSTM module
 - **ViennaRNA** is required for the encoding module (RNA secondary structure)
 - Pre-trained models are bundled in `dgrec/example_data/`
 

@@ -22,7 +22,7 @@ Documentation = "https://dbikard.github.io/dgrec"
 dgrec = "dgrec._modidx:d"
 
 [project.optional-dependencies]
-lstm = ['tensorflow[and-cuda]==2.17']
+lstm = ['tensorflow[and-cuda]>=2.17']
 dev = ['ViennaRNA', 'cython']
 
 

@@ -45,7 +45,7 @@ setuptools.setup(
     include_package_data = True,
     package_data={"dgrec.example_data": ["*"]},  # Include all files in example_data
     install_requires = requirements,
-    extras_require={ 'dev': dev_requirements, 'lstm': ['tensorflow[and-cuda]==2.17'] },
+    extras_require={ 'dev': dev_requirements, 'lstm': ['tensorflow[and-cuda]>=2.17'] },
     dependency_links = cfg.get('dep_links','').split(),
     python_requires  = ">="+cfg['min_python']+", <"+cfg['max_python'],
     long_description = open('README.md', encoding='utf-8').read(),
