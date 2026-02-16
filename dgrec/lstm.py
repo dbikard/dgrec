@@ -76,6 +76,28 @@ if _TF_AVAILABLE:
             return tf.identity(inputs)
         def compute_mask(self, inputs, mask=None):
             return None
+    # Define your custom metric class again (same as before)
+    class MaskedAccuracy(tf.keras.metrics.Metric):
+        def __init__(self, name='masked_accuracy', **kwargs):
+            super(MaskedAccuracy, self).__init__(name=name, **kwargs)
+            self.total = self.add_weight(name='total', initializer='zeros')
+            self.count = self.add_weight(name='count', initializer='zeros')
+        
+        def update_state(self, y_true, y_pred, sample_weight=None):
+            y_true_labels = tf.argmax(y_true, axis=-1)
+            y_pred_labels = tf.argmax(y_pred, axis=-1)
+            mask = tf.cast(tf.reduce_any(tf.not_equal(y_true, 0.0), axis=-1), tf.float32)
+            matches = tf.cast(tf.equal(y_true_labels, y_pred_labels), tf.float32)
+            masked_matches = matches * mask
+            self.total.assign_add(tf.reduce_sum(masked_matches))
+            self.count.assign_add(tf.reduce_sum(mask))
+        
+        def result(self):
+            return self.total / tf.maximum(self.count, 1e-8)
+        
+        def reset_state(self):
+            self.total.assign(0.0)
+            self.count.assign(0.0)
 else:
     def masked_categorical_crossentropy(y_true, y_pred):
         _require_tensorflow()
@@ -205,6 +227,7 @@ def _get_models():
                 'masked_categorical_crossentropy': masked_categorical_crossentropy,
                 'masked_accuracy': masked_accuracy,
                 'DetachMask': DetachMask  # placeholder for custom DetachMask
+                ,'MaskedAccuracy': MaskedAccuracy
             }
         )
         _models_cache['firstmodel'], _models_cache['secondmodel'] = separate_model(model_TR_to_VR)
