@@ -5,8 +5,8 @@
 # %% auto #0
 __all__ = ['data_path', 'model_name', 'model_path', 'model_Sp', 'model_name2', 'model_path2', 'model_Avd_Sp', 'model_name_whole',
            'model_path_whole', 'model_whole', 'score', 'score_list', 'DGR_percentage', 'DGR_percentage_list',
-           'pareto_front', 'codons_compatible_with_AA', 'valid_seq_reach_AAs', 'propose_single_codon_changes',
-           'evaluate_sequences', 'optimize_sequence']
+           'pareto_front', 'codons_compatible_with_AA', 'mutate_adenine', 'get_aa_by_adenine_mutation',
+           'valid_seq_reach_AAs', 'propose_single_codon_changes', 'evaluate_sequences', 'optimize_sequence']
 
 # %% ../nbs/API/05_predictions.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import pickle
@@ -129,7 +129,7 @@ def pareto_front(sequences #Dataframe containing a sequence and its two scores
             pareto.append(s)
     return pareto
 
-def codons_compatible_with_AA(target_aa, genetic_code):
+def codons_compatible_with_AA(target_aa):
     """
     Return all codons X such that replacing any 'A' in X by {A,C,G,T}
     can yield a codon encoding target_aa.
@@ -154,14 +154,35 @@ def codons_compatible_with_AA(target_aa, genetic_code):
 
     return set(compatible)
 
+def mutate_adenine(codon):
+    """Generate all possible codons by mutating adenine (A) to T, C, or G."""
+    mutations = []
+    for i, base in enumerate(codon):
+        if base == 'A':
+            for new_base in ['T', 'C', 'G']:
+                mutated_codon = codon[:i] + new_base + codon[i+1:]
+                mutations.append(mutated_codon)
+    return mutations
 
+def get_aa_by_adenine_mutation(codon):
+    """Return the list of unique amino acids reachable by adenine mutation in the codon."""
+    mutations = mutate_adenine(codon)
+    unique_aa = set()
+
+    for mutated_codon in mutations:
+        aa = genetic_code.get(mutated_codon, None)
+        if aa is not None:
+            unique_aa.add(aa)
+
+    return sorted(unique_aa)
 
 def valid_seq_reach_AAs(
     seq,
     dict_allowed=None,
+    dict_allowed_max_min=None,
     frame_offset=0,
     freq_min=0.2,
-    codon_usage=None
+    codon_usage=codon_usage_ecoli
 ):
     """Checks whether a DNA sequence can reach a set of target amino acids through adenine mutagenesis
     at each codon position."""
@@ -175,13 +196,13 @@ def valid_seq_reach_AAs(
     for i, allowed_aas in dict_allowed.items():
         # Start with codons compatible with first AA
         candidate_codons = set(
-            codons_compatible_with_AA(allowed_aas[0], genetic_code)
+            codons_compatible_with_AA(allowed_aas[0])
         )
 
         # Intersect with other allowed AAs
         for aa in allowed_aas[1:]:
             candidate_codons &= set(
-                codons_compatible_with_AA(aa, genetic_code)
+                codons_compatible_with_AA(aa)
             )
 
         # Apply codon usage filter
@@ -192,9 +213,21 @@ def valid_seq_reach_AAs(
                 continue
             if codon_usage[aa].get(codon, 0) > freq_min:
                 filtered_codons.append(codon)
-
+        # Check for codon that maximizes or minimizes diversity at that position, as indicated by dict_allowed_max_min
+        if dict_allowed_max_min!=None and i in dict_allowed_max_min:
+            if dict_allowed_max_min[i]=='max':
+                L=[]
+                for codon in filtered_codons: 
+                    L.append(len(get_aa_by_adenine_mutation(codon)))
+                filtered_codons=[filtered_codons[k] for k in range(len(L)) if L[k]==max(L)]
+            elif dict_allowed_max_min[i]=='min':
+                L=[]
+                for codon in filtered_codons: 
+                    L.append(len(get_aa_by_adenine_mutation(codon)))
+                filtered_codons=[filtered_codons[k] for k in range(len(L)) if L[k]==min(L)]
         # If no valid codons → no valid sequences at all
         if not filtered_codons:
+            print("No valid sequence!")
             return []
 
         allowed_codons_per_pos[i] = filtered_codons
@@ -220,7 +253,8 @@ def valid_seq_reach_AAs(
     
 def propose_single_codon_changes(
     seq,
-    dict_allowed=defaultdict(list),
+    dict_allowed=None,
+    dict_allowed_max_min=None,
     frame_offset=0,
     freq_min=0.2,
     forbidden_positions=[],
@@ -236,10 +270,13 @@ def propose_single_codon_changes(
             continue
 
         codon = seq[i:i+3]
-        allowed_aas = dict_allowed.get((i-frame_offset)//3, [])
+        if dict_allowed!=None and (i-frame_offset)//3 in dict_allowed:
+            allowed_aas = dict_allowed.get((i-frame_offset)//3, [])
+        else:
+            allowed_aas=None
 
         # No restriction → behave as before
-        if not allowed_aas:
+        if allowed_aas==None:
             aa = genetic_code.get(codon)
             if aa not in codon_usage:
                 continue
@@ -258,14 +295,15 @@ def propose_single_codon_changes(
         # Restricted case: AA → compatible codons
         else:
             
-            candidate_codons = set(codons_compatible_with_AA(allowed_aas[0], genetic_code))
+            candidate_codons = set(codons_compatible_with_AA(allowed_aas[0]))
             for aa in allowed_aas[1:]:
-                candidate_codons &= codons_compatible_with_AA(aa, genetic_code)
-            candidate_codons_not_stop=candidate_codons - codons_reaching_stop
+                candidate_codons &= codons_compatible_with_AA(aa)
+            candidate_codons_not_stop=candidate_codons - codons_reaching_stop #remove codons reaching stop codons by A mutagenesis
             if not candidate_codons_not_stop:
                 print('All valid codons reach stop codons')
             else:
                 candidate_codons=candidate_codons_not_stop
+            filter_codons=[]
             for new_codon in candidate_codons:
                 aa = genetic_code.get(new_codon)
                 
@@ -278,7 +316,23 @@ def propose_single_codon_changes(
 
                 if new_codon == codon:
                     continue
+                filter_codons.append(new_codon)
+            candidate_codons=filter_codons
+            if dict_allowed_max_min!=None and (i-frame_offset)//3 in dict_allowed_max_min:
+                j=(i-frame_offset)//3
+                if dict_allowed_max_min[j]=='max':
+                    L=[]
+                    for codon in candidate_codons: 
+                        L.append(len(get_aa_by_adenine_mutation(codon)))
+                    candidate_codons=[candidate_codons[k] for k in range(len(L)) if L[k]==max(L)]
+                    
+                elif dict_allowed_max_min[j]=='min':
+                    L=[]
+                    for codon in candidate_codons: 
+                        L.append(len(get_aa_by_adenine_mutation(codon)))
+                    candidate_codons=[candidate_codons[k] for k in range(len(L)) if L[k]==min(L)]
 
+            for new_codon in candidate_codons:
                 variants.append(seq[:i] + new_codon + seq[i+3:])
 
     return variants
@@ -314,6 +368,7 @@ def optimize_sequence(
     original_seq,
     frame_offset= 0,
     dict_allowed_AAs = None,
+    dict_allowed_AAs_max_min=None,
     CHANGES = 6,
     freq_min = 0.2,
     N = 1,
@@ -336,9 +391,12 @@ def optimize_sequence(
         Original DNA sequence to optimize.
     frame_offset : int, default=0
         Reading-frame offset (0, 1, or 2) used when grouping codons.
-    dict_allowed_AAs : dict, defaultdict(list)
+    dict_allowed_AAs : dict, default=None
         Dictionary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
         Selects for codons which do not reach (by adenine mutation) stop codons. If not possible, allow them anyway.
+    dict_allowed_AAs_max_min : dict, default=None
+        Dictionary of positions (keys) and either you want maximum diversity ('max') or mimimum diversity ('min')  at the positions mentionned in dict_allowed_AAs. Diversity = number of AAs reachable by adenine mutations (already removed codons reaching stop codons). 
+        If not mentioned, any sequence that fullfills dict_allowed_AAs[i] is accepted.
     CHANGES : int, default=6
         Maximum number of codon substitutions allowed (on top of the AAs requirements from the previous argument).
     freq_min : float, default=0.2
@@ -384,12 +442,13 @@ def optimize_sequence(
     result["New_Variant"]
     ```
     """
-    if not dict_allowed_AAs:
+    if dict_allowed_AAs==None:
         beam = [original_seq]
     else:
         beam = valid_seq_reach_AAs(
     original_seq,
     dict_allowed=dict_allowed_AAs,
+    dict_allowed_max_min=dict_allowed_AAs_max_min,
     frame_offset=frame_offset,
     freq_min=freq_min,
     codon_usage=codon_usage
@@ -419,7 +478,7 @@ def optimize_sequence(
         for seq in beam:
             variants.extend(
                 propose_single_codon_changes(
-                    seq,dict_allowed_AAs, frame_offset, freq_min,
+                    seq,dict_allowed_AAs,dict_allowed_AAs_max_min, frame_offset, freq_min,
                     forbidden_positions, codon_usage
                 )
             )

@@ -437,7 +437,8 @@ from . import predictions
 
 def optimize_sequence_display_proteins(original_seq: str,
     frame_offset: int = 0,
-    dict_allowed_AAs : dict = defaultdict(list),
+    dict_allowed_AAs = None,
+    dict_allowed_AAs_max_min = None,
     CHANGES: int = 6,
     freq_min: float = 0.2,
     N: int = 1,
@@ -464,6 +465,9 @@ def optimize_sequence_display_proteins(original_seq: str,
     dict_allowed_AAs : dict, defaultdict(list)
         Dictionary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
         Selects for codons which do not reach (by adenine mutation) stop codons. If not possible, allow them anyway.
+    dict_allowed_AAs_max_min : dict, default=None
+        Dictionary of positions (keys) and either you want maximum diversity ('max') or mimimum diversity ('min')  at the positions mentionned in dict_allowed_AAs. Diversity = number of AAs reachable by adenine mutations (already removed codons reaching stop codons). 
+        If not mentioned, any sequence that fullfills dict_allowed_AAs[i] is accepted.
     CHANGES : int, default=6
         Maximum number of codon substitutions allowed (on top of the AAs requirements from the previous argument).
     freq_min : float, default=0.2
@@ -515,6 +519,7 @@ def optimize_sequence_display_proteins(original_seq: str,
     original_seq,
     frame_offset,
     dict_allowed_AAs,
+    dict_allowed_AAs_max_min,
     CHANGES,
     freq_min,
     N,
