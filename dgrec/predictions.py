@@ -6,7 +6,8 @@
 __all__ = ['data_path', 'model_name', 'model_path', 'model_Sp', 'model_name2', 'model_path2', 'model_Avd_Sp', 'model_name_whole',
            'model_path_whole', 'model_whole', 'score', 'score_list', 'DGR_percentage', 'DGR_percentage_list',
            'pareto_front', 'codons_compatible_with_AA', 'mutate_adenine', 'get_aa_by_adenine_mutation',
-           'valid_seq_reach_AAs', 'propose_single_codon_changes', 'evaluate_sequences', 'optimize_sequence']
+           'valid_seq_reach_AAs', 'propose_single_codon_changes', 'evaluate_sequences', 'check_any_AAC_position',
+           'optimize_sequence']
 
 # %% ../nbs/API/05_predictions.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import pickle
@@ -175,6 +176,8 @@ def get_aa_by_adenine_mutation(codon):
             unique_aa.add(aa)
 
     return sorted(unique_aa)
+
+
 
 def valid_seq_reach_AAs(
     seq,
@@ -363,6 +366,16 @@ features=2)
         })
     return results
 
+def check_any_AAC_position(dict_allowed,dict_allowed_max_min,length):
+    if dict_allowed_max_min==None:
+        return []
+    else:
+        forbidden_to_add=[]
+        for i in range(length):
+            if (i in dict_allowed_max_min) and (dict_allowed_max_min[i]=="max") and (not i in dict_allowed):
+                forbidden_to_add.append(i)
+        return(forbidden_to_add)
+
 # %% ../nbs/API/05_predictions.ipynb #7c1cc23f-b21b-41a2-b03f-627eec8b5428
 def optimize_sequence(
     original_seq,
@@ -397,6 +410,7 @@ def optimize_sequence(
     dict_allowed_AAs_max_min : dict, default=None
         Dictionary of positions (keys) and either you want maximum diversity ('max') or mimimum diversity ('min')  at the positions mentionned in dict_allowed_AAs. Diversity = number of AAs reachable by adenine mutations (already removed codons reaching stop codons). 
         If not mentioned, any sequence that fullfills dict_allowed_AAs[i] is accepted.
+        If there is no list of accessible AAs for dict_allowed_AAs[i] but dict_allowed_AAs_min_max[i]=='max', it puts an AAC here and forbids the algorithm to change it.
     CHANGES : int, default=6
         Maximum number of codon substitutions allowed (on top of the AAs requirements from the previous argument).
     freq_min : float, default=0.2
@@ -442,18 +456,46 @@ def optimize_sequence(
     result["New_Variant"]
     ```
     """
-    if dict_allowed_AAs==None:
+    codon_changes_done = 0
+    if dict_allowed_AAs_max_min==None:
         beam = [original_seq]
-    else:
-        beam = valid_seq_reach_AAs(
-    original_seq,
-    dict_allowed=dict_allowed_AAs,
-    dict_allowed_max_min=dict_allowed_AAs_max_min,
-    frame_offset=frame_offset,
-    freq_min=freq_min,
-    codon_usage=codon_usage
-)
+        seq=original_seq
+        forbidden_final=forbidden_positions
+    elif check_any_AAC_position(dict_allowed_AAs,dict_allowed_AAs_max_min,len(original_seq)//3)!=[]: #Add AAC at positions where you want to maximize diversity but didn't precise the allowed AAs
+        forbidden_to_add=check_any_AAC_position(dict_allowed_AAs,dict_allowed_AAs_max_min,len(original_seq)//3)
+        seq=original_seq
+        print(forbidden_to_add)
+        print(seq)
+        for i in forbidden_to_add:
+            if seq[3*i+frame_offset:3*i+3+frame_offset]!="AAC":
+                codon_changes_done += 1
+            seq=seq[:3*i+frame_offset]+'AAC'+seq[3*i+3+frame_offset:]
+            print(seq)
+        print(seq)
+        forbidden_to_add=[3*i+frame_offset for i in forbidden_to_add]
         
+        beam = valid_seq_reach_AAs(
+                seq,
+                dict_allowed=dict_allowed_AAs,
+                dict_allowed_max_min=dict_allowed_AAs_max_min,
+                frame_offset=frame_offset,
+                freq_min=freq_min,
+                codon_usage=codon_usage
+            )
+        forbidden_final=forbidden_positions+forbidden_to_add
+    else:
+        forbidden_to_add=[]
+        beam = valid_seq_reach_AAs(
+                original_seq,
+                dict_allowed=dict_allowed_AAs,
+                dict_allowed_max_min=dict_allowed_AAs_max_min,
+                frame_offset=frame_offset,
+                freq_min=freq_min,
+                codon_usage=codon_usage
+            )
+        seq=original_seq
+        forbidden_final=forbidden_positions
+                    
     evaluated = evaluate_sequences(beam)
 
     good = [
@@ -471,7 +513,7 @@ def optimize_sequence(
             "Score_TRSpAvd": best["Score_TRSpAvd"]
         }]
 
-    codon_changes_done = 0
+    
     while beam and codon_changes_done <= CHANGES:
         codon_changes_done += 1
         variants = []
@@ -479,7 +521,7 @@ def optimize_sequence(
             variants.extend(
                 propose_single_codon_changes(
                     seq,dict_allowed_AAs,dict_allowed_AAs_max_min, frame_offset, freq_min,
-                    forbidden_positions, codon_usage
+                    forbidden_final, codon_usage
                 )
             )
 
