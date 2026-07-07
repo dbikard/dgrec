@@ -8,39 +8,83 @@ Docs: https://dbikard.github.io/dgrec/API/encoding.html.md"""
 __all__ = ['encode_tr_list']
 
 # %% ../nbs/API/04_encoding.ipynb #85fac3de-1110-42ce-9848-be66f1efdc1c
+import os, atexit
+import concurrent.futures as _futures
 import ViennaRNA as RNA
 import numpy as np
 from tqdm import tqdm
 
 # %% ../nbs/API/04_encoding.ipynb #82f84558-2e57-47ed-82e5-e30af9e04a02
+# The context constants and the per-TR worker live at MODULE level on purpose:
+# under the "spawn" start method (Windows / macOS default) they must be
+# importable/picklable in the worker processes. Kept private (leading _) so they
+# stay internal and are not added to the module's public API (__all__).
+_Avd = 'aagggcaggctgggaaATAA'.upper()
+_Sp  = 'tctgtgcccatcaccttcttgcatggctctgccaacgctacggcttggcgggctggcctttcctcaataggtggtcagccggttctgtcctgcttcggcgaacacgttacacggttcggcaaaacgtcgattactgaaaatggaaaggcggggccgacttc'.upper()
+
+def _encode_one(args):
+    """Fold-based features for ONE TR (top-level -> picklable for multiprocessing). Identical to serial."""
+    TR, feat = args
+    _, e_tr = RNA.fold_compound(TR).pf()
+    _, e_tr_sp = RNA.fold_compound(TR + _Sp[:30]).pf()
+    features = [e_tr_sp - e_tr]
+    if feat == 2:
+        _, e_avd_sp = RNA.fold_compound(_Avd + TR + _Sp[:15]).pf()
+        features.append(e_avd_sp - e_tr)
+    return features
+
+def _lower_priority():
+    """Worker initializer: drop to below-normal OS priority so a full-core run stays responsive on a
+    personal computer (the folds still use every assigned core, but yield to interactive work)."""
+    try:
+        if os.name == "nt":
+            import ctypes
+            k = ctypes.windll.kernel32
+            k.SetPriorityClass(k.GetCurrentProcess(), 0x00004000)   # BELOW_NORMAL_PRIORITY_CLASS
+        else:
+            os.nice(10)
+    except Exception:
+        pass
+
+_POOL = None
+def _get_pool(n_jobs):
+    "Lazily create and reuse a single persistent process pool (worker startup is heavy under spawn because importing dgrec is heavy - pay it once)."
+    global _POOL
+    if _POOL is None:
+        _POOL = _futures.ProcessPoolExecutor(max_workers=n_jobs, initializer=_lower_priority)
+        atexit.register(lambda: _POOL.shutdown(wait=False))
+    return _POOL
+
 def encode_tr_list(list_TRs: list # A list of DNA sequences (strings) to encode.
-    ,feat=1                     ):
+    ,feat=1                       # 1 -> single-feature model, 2 -> two-feature model.
+    ,n_jobs=None                  # Worker processes; default all-but-one core. n_jobs=1 forces serial.
+    ,parallel_min=200             # Only parallelize batches at least this large (amortizes pool startup).
+    ):
     """
     Encodes a list of TR sequences. If feat is 1, uses only the single feature model, if 2 uses the 2 features model.
+
+    Output is bit-identical to the original serial implementation. The 3 ViennaRNA
+    partition-function folds per TR are independent across TRs, so they are spread
+    over worker *processes* (not threads: ViennaRNA's SWIG bindings hold the GIL).
+    A persistent process pool is reused across calls to pay worker startup only once,
+    and any pool failure falls back to the serial path via try/except.
+
+    NOTE: because this uses multiprocessing, callers launching it from a script must
+    guard their entry point with `if __name__ == "__main__":` (spawn requirement on
+    Windows/macOS).
+
+    On a personal computer, cap cores with the DGREC_NJOBS environment variable
+    (e.g. DGREC_NJOBS=4) to keep the machine responsive; workers also run at
+    below-normal priority.
     """
-    Avd='aagggcaggctgggaaATAA'.upper()
-    Sp='tctgtgcccatcaccttcttgcatggctctgccaacgctacggcttggcgggctggcctttcctcaataggtggtcagccggttctgtcctgcttcggcgaacacgttacacggttcggcaaaacgtcgattactgaaaatggaaaggcggggccgacttc'.upper()
-
-    # Initialize an empty list to store the encoded features
-    new_features_encoded = []
-
-    # Iterate through each DNA sequence in the list
-    for TR in list_TRs:
-        features = []
-
-        # Base folding energy of TR alone
-        fc_base = RNA.fold_compound(TR)
-        _, e_tr = fc_base.pf()
-    
-        fc_sp = RNA.fold_compound(TR + Sp[:30])
-        _, e_tr_sp = fc_sp.pf()
-        features.append(e_tr_sp - e_tr)
-        
-        if feat==2:
-            fc_avd_sp = RNA.fold_compound(Avd+TR + Sp[:15])
-            _, e_avd_sp = fc_avd_sp.pf()
-            features.append(e_avd_sp - e_tr)
-        new_features_encoded.append(features)
-
-    # Convert the list of encoded features into a NumPy array
-    return np.array(new_features_encoded)
+    if n_jobs is None:
+        n_jobs = int(os.environ.get("DGREC_NJOBS") or max(1, (os.cpu_count() or 1) - 1))
+    args = [(TR, feat) for TR in list_TRs]
+    if n_jobs > 1 and len(args) >= parallel_min:
+        try:
+            pool = _get_pool(n_jobs)
+            chunksize = max(1, len(args) // (n_jobs * 4))
+            return np.array(list(pool.map(_encode_one, args, chunksize=chunksize)))
+        except Exception:
+            pass
+    return np.array([_encode_one(a) for a in args])
