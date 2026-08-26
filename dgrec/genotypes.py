@@ -26,6 +26,8 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
                      ref_read_size: int = None, #number of nucleotides in the read expected to align to the ref_seq. If None the whole read will be used.
                      quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                      ignore_pos: list = [], #list of positions that are ignored in the genotype
+                     max_mutations: int = 15, #reads with more mutations than this are discarded as bad data. Raise it when genotypes are expected to differ strongly from the reference, e.g. a VR replaced by a TR-derived copy.
+                     base_quality_threshold: int = 0, #if >0, bases below this Phred score are masked and never called as mutations. 0 keeps the previous behaviour of filtering on mean read quality only.
                      **kwargs #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                      ) -> dict:
     
@@ -57,15 +59,24 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
             if meanScore>quality_threshold:
                 n_reads_pass_Qfilter+=1
                 umi=str(r.seq[:umi_size])
+                read_seq=str(r.seq[umi_size:])
+                if base_quality_threshold>0:
+                    #mask low quality bases so that they cannot be called as mutations
+                    read_qual=r.letter_annotations['phred_quality'][umi_size:]
+                    read_seq="".join(b if q>=base_quality_threshold else "N"
+                                     for b,q in zip(read_seq,read_qual))
                 if ref_read_size!=None:
-                    mutations=get_mutations(ref_seq,r.seq[umi_size:umi_size+ref_read_size], **align_param)
-                else:
-                    mutations=get_mutations(ref_seq,r.seq[umi_size:], **align_param)
+                    read_seq=read_seq[:ref_read_size]
+
+                mutations=get_mutations(ref_seq,read_seq, **align_param)
+
+                if base_quality_threshold>0:
+                    mutations=[m for m in mutations if m[2]!="N"]
 
                 if ignore_pos:
                     mutations = [m for m in mutations if m[1] not in ignore_pos]
                 n_mut=len(mutations)
-                if n_mut<15: #more than 15 mutations is almost certainly bad data
+                if n_mut<max_mutations:
                     n_reads_aligned+=1
                     UMI_dict[umi].append(mut_to_str(mutations))
     
@@ -113,13 +124,17 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
                     ref_read_size: int = None, #number of nucleotides in the read expected to align to the ref_seq. If None the whole read will be used.
                     quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                     ignore_pos: list = [], #list of positions that are ignored in the genotype
+                    max_mutations: int = 15, #reads with more mutations than this are discarded as bad data
+                    base_quality_threshold: int = 0, #if >0, bases below this Phred score are masked and never called as mutations
                     reads_per_umi_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
                     save_umi_data: str = None, #path to the csv file where to save the details of the genotypes reads for each UMI. If None the data isn't saved.
                     **kwargs, #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                     ):
     """Processes a single-end FASTQ file to extract UMI-corrected genotypes.
     Returns a sorted list of (genotype_string, count) tuples."""
-    UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, ref_read_size, quality_threshold, ignore_pos, **kwargs)
+    UMI_dict = get_UMI_genotype(fastq_path, ref_seq, umi_size, ref_read_size, quality_threshold, ignore_pos,
+                                max_mutations=max_mutations,
+                                base_quality_threshold=base_quality_threshold, **kwargs)
     if save_umi_data:
         with open(save_umi_data,"w", newline='') as handle: 
             csv_writer = csv.writer(handle,delimiter="\t",doublequote=False)
