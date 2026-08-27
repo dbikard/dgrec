@@ -38,6 +38,7 @@ def get_UMI_genotype(fastq_path: str, #path to the input fastq file
                  "mismatch":-1, 
                  "gap_open":-1, 
                  "gap_extend":-.5,
+                 "ungapped_max":8,
                  }
     
     for arg in kwargs:

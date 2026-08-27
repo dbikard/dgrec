@@ -50,10 +50,26 @@ def mut_rix(mutations):
     return res_rix
 
 # %% ../nbs/API/07_utils.ipynb #5250d690
-def get_mutations(seqA,seqB, match=2, mismatch=-1, gap_open=-1, gap_extend=-.5):
+def get_mutations(seqA,seqB, match=2, mismatch=-1, gap_open=-1, gap_extend=-.5,
+                  ungapped_max=8, #skip the alignment when the sequences are the same length and differ at fewer than this many positions. 0 disables the shortcut.
+                  ):
     """Aligns two sequences and returns a list of mutations.
     Each mutation is a tuple of (reference_base, position, query_base).
+
+    Amplicon reads mostly carry substitutions only, and for those a direct
+    comparison gives the same answer as the alignment at a fraction of the cost -
+    the dynamic-programming matrix is the dominant expense and is ~140x slower
+    than comparing the bases. An indel shifts everything downstream and so shows
+    up as a burst of mismatches, well above `ungapped_max`, sending the read to
+    the aligner. The threshold is low on purpose: with sane gap penalties an
+    alignment can only beat a direct comparison when a gap repairs several
+    mismatches at once, so a read below it has nothing to gain.
     """
+    if ungapped_max and len(seqA)==len(seqB):
+        mutations=[(a,i,b) for i,(a,b) in enumerate(zip(str(seqA),str(seqB))) if a!=b]
+        if len(mutations)<ungapped_max:
+            return mutations
+
     align=pairwise2.align.globalms(seqA,seqB, match, mismatch, gap_open, gap_extend, one_alignment_only=True)[0]
     mutations=align2mut(align) 
     mutations=mut_rix(mutations)
