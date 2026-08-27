@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Functions for analyzing mutation rates in DGRec experiments. Computes the mutation rate per base within a specified sequence range from genotype data. The hallmark DGRec signature is elevated A-specific mutation rates within the VR.">
+
+<title>analysis – dgrec</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-d63a2c9c8df14b07662b36303925c8cc.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../styles.css">
+<meta property="og:title" content="analysis – dgrec">
+<meta property="og:description" content="Functions for analyzing mutation rates in DGRec experiments. Computes the mutation rate per base within a specified sequence range from genotype data. The hallmark DGRec signature is elevated A-specific mutation rates within the VR.">
+<meta property="og:site_name" content="dgrec">
+<meta name="twitter:title" content="analysis – dgrec">
+<meta name="twitter:description" content="Functions for analyzing mutation rates in DGRec experiments. Computes the mutation rate per base within a specified sequence range from genotype data. The hallmark DGRec signature is elevated A-specific mutation rates within the VR.">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">dgrec</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../API/genotypes.html">API</a></li><li class="breadcrumb-item"><a href="../API/analysis.html">analysis</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dgrec</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">API</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/genotypes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">genotypes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/genotypes_paired.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">genotypes_paired</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/plotting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plotting</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/analysis.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/encoding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">encoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/predictions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">predictions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/cli.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cli</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/lstm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">lstm</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../API/library_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">library_size</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">DGRec data analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../DGRec data analysis/mutation_distribution.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Mutations distribution</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../DGRec data analysis/01_library_size_estimation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">01_library_size_estimation.html</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#tr-aware-analysis" id="toc-tr-aware-analysis" class="nav-link active" data-scroll-target="#tr-aware-analysis">TR-aware analysis</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/dbikard/dgrec/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../API/genotypes.html">API</a></li><li class="breadcrumb-item"><a href="../API/analysis.html">analysis</a></li></ol></nav>
+<div class="quarto-title">
+<h1 class="title">analysis</h1>
+</div>
+
+<div>
+  <div class="description">
+    Functions for analyzing mutation rates in DGRec experiments. Computes the mutation rate per base within a specified sequence range from genotype data. The hallmark DGRec signature is elevated A-specific mutation rates within the VR.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<div id="4d7b7766" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-27T16:52:20.231103+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-27T16:52:20.232150+00:00&quot;,&quot;total&quot;:0.0010524329999981319}}" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dgrec.example_data <span class="im">import</span> get_example_data_dir</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="6a712fdb" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-27T16:52:20.235206+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-27T16:52:20.335211+00:00&quot;,&quot;total&quot;:0.10001074600000948}}" data-execution_count="4">
+<hr>
+<p><a href="https://github.com/dbikard/dgrec/blob/main/dgrec/analysis.py#L20" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="mut_rate" class="level3">
+<h3 class="anchored" data-anchor-id="mut_rate">mut_rate</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mut_rate(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    gen_list:<span class="bu">list</span>, <span class="co"># a genotype list with the number of molecules detected</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    ran:<span class="bu">tuple</span>, <span class="co"># the position range in which to compute the mutation rate. If None the rate is computed for the full sequence.</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    ref_seq:<span class="bu">str</span>, <span class="co"># reference sequence</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Computes the mutation rate per base within the specified range. The rate can be computed for specific bases using the base_restriction argument.</em></p>
+</section>
+</div>
+<div id="a83c2fc7" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>data_path<span class="op">=</span>get_example_data_dir()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>gen_list<span class="op">=</span>parse_genotypes(os.path.join(data_path,<span class="st">"sacB_genotypes.csv"</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>read_ref_file<span class="op">=</span><span class="st">"sacB_ref.fasta"</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>ref<span class="op">=</span><span class="bu">next</span>(SeqIO.parse(os.path.join(data_path,read_ref_file),<span class="st">"fasta"</span>))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>ref_seq<span class="op">=</span><span class="bu">str</span>(ref.seq)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">#showing a few example lines</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> g,n <span class="kw">in</span> gen_list[<span class="dv">1</span>:<span class="dv">200</span>:<span class="dv">20</span>]:</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(n,<span class="st">"</span><span class="ch">\t</span><span class="st">"</span>,g)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>279      A91G
+28   A68C
+15   A72G,A79T,A91T
+10   A61G,A72G
+6    A61G,A68G
+6    A68G,A76G,A91G
+5    A61T,A79G
+4    A86T
+4    A72G,A76G,A86G,A91T
+3    A61T,A76G,A91G</code></pre>
+</div>
+</div>
+<div id="d23e89bd" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>TR_range<span class="op">=</span>(<span class="dv">50</span>,<span class="dv">119</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>before_TR_range<span class="op">=</span>(<span class="dv">5</span>,<span class="dv">50</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>mut_rate_TR<span class="op">=</span>mut_rate(gen_list,TR_range,ref_seq)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> b <span class="kw">in</span> mut_rate_TR:</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Mutation rate in VR at </span><span class="sc">{</span>b<span class="sc">}</span><span class="ss"> positions: </span><span class="sc">{</span>mut_rate_TR[b]<span class="sc">:.1e}</span><span class="ss">"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>mut_rate_outside_TR<span class="op">=</span>mut_rate(gen_list,before_TR_range,ref_seq)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> b <span class="kw">in</span> mut_rate_outside_TR:</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Mutation rate outside VR at </span><span class="sc">{</span>b<span class="sc">}</span><span class="ss"> positions: </span><span class="sc">{</span>mut_rate_outside_TR[b]<span class="sc">:.1e}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Mutation rate in VR at A positions: 1.9e-02
+Mutation rate in VR at T positions: 9.9e-04
+Mutation rate in VR at G positions: 1.1e-04
+Mutation rate in VR at C positions: 2.2e-04
+Mutation rate in VR at all positions: 2.9e-03
+Mutation rate outside VR at A positions: 2.1e-05
+Mutation rate outside VR at T positions: 4.8e-05
+Mutation rate outside VR at G positions: 1.8e-04
+Mutation rate outside VR at C positions: 5.9e-05
+Mutation rate outside VR at all positions: 6.7e-05</code></pre>
+</div>
+</div>
+<section id="tr-aware-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="tr-aware-analysis">TR-aware analysis</h2>
+<p>A DGR copies its template repeat into the variable repeat, making errors at TR adenines and, an order of magnitude lower but still well above background, at TR thymines. Classifying a mutation against that expectation needs two facts kept apart — what kind of position it is, and what the read carries there — because merging them mixes <em>was this molecule converted</em> with <em>did the reverse transcriptase err here</em>.</p>
+<p>These helpers key on the <strong>TR</strong> base, not the reference base. Where the VR is designed to match the TR the two coincide, which is why <a href="https://dbikard.github.io/dgrec/API/utils.html#is_dgrec"><code>is_dgrec</code></a> tests the reference base. At a natural DGR locus the VR is already a retrohoming product with its adenines spent, so the positions that report a new conversion have a non-A reference base and that test is blind to them.</p>
+<div id="a7e5e209" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>POS_CLASSES, OBSERVATIONS</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>(('A-div', 'A-shared', 'N-div', 'invariant', 'outside'),
+ ('to_TR', 'to_third', 'indel'))</code></pre>
+</div>
+</div>
+<div id="00a7b125" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-27T16:52:20.348733+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-27T16:52:20.356705+00:00&quot;,&quot;total&quot;:0.00797680099999809}}" data-execution_count="9">
+<hr>
+<p><a href="https://github.com/dbikard/dgrec/blob/main/dgrec/analysis.py#L72" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="tralignment" class="level3">
+<h3 class="anchored" data-anchor-id="tralignment">TRAlignment</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> TRAlignment(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    ref_seq:<span class="bu">str</span>, <span class="co"># reference amplicon sequence</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    tr_seq:<span class="bu">str</span>, <span class="co"># template repeat, in the same orientation as ref_seq</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    vr_start:<span class="bu">int</span><span class="op">=</span><span class="va">None</span>, <span class="co"># 0-based start of the VR; located automatically if None</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    min_identity:<span class="bu">float</span><span class="op">=</span><span class="fl">0.5</span>, <span class="co"># identity required when locating the VR</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Positional annotation of an amplicon against its template repeat.</em></p>
+<p>Two facts are kept apart, because merging them mixes <em>was this molecule converted</em> with <em>did the reverse transcriptase err here</em>:</p>
+<p>position class, a property of the reference <code>A-div</code> TR=A, TR!=VR conversion and RT fidelity, confounded <code>A-shared</code> TR=VR=A RT error only, and only if converted <code>N-div</code> TR!=A, TR!=VR conversion alone, no mutagenesis expected <code>invariant</code> TR=VR!=A nothing expected; mutations are noise <code>outside</code> not covered by the TR</p>
+<p>observation, what the read carries <code>to_TR</code>, <code>to_third</code>, or <code>indel</code> (never a conversion signal)</p>
+<p>Note this keys on the <strong>TR</strong> base, not the reference base. Where the VR is designed to match the TR the two coincide, but at a natural DGR locus the VR is already a retrohoming product with its adenines spent, so the positions reporting a new conversion have a non-A reference base.</p>
+</section>
+</div>
+<div id="dedefb82" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># a toy amplicon: an 8 bp flank, a 10 bp VR, another 8 bp flank</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>demo_ref <span class="op">=</span> <span class="st">"ACGTACGT"</span> <span class="op">+</span> <span class="st">"GCTACGATCG"</span> <span class="op">+</span> <span class="st">"ACGTACGT"</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>demo_tr  <span class="op">=</span>              <span class="st">"ACTACGATCA"</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>aln <span class="op">=</span> TRAlignment(demo_ref, demo_tr)   <span class="co"># the VR is located automatically</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>aln</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>TRAlignment(ref=26bp, VR=[8,18), A-div=2, A-shared=2, N-div=0, invariant=6)</code></pre>
+</div>
+</div>
+<div id="5a167e31" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>aln.positions</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'A-div': (8, 17),
+ 'A-shared': (11, 14),
+ 'N-div': (),
+ 'invariant': (9, 10, 12, 13, 15, 16)}</code></pre>
+</div>
+</div>
+<div id="e91a1d7b" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The test uses TR adenines against TR G/C. TR-T is excluded from both:</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># the reverse transcriptase errs there well above the G/C background.</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>aln.signal_positions, aln.null_positions, aln.thymine_positions</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>((8, 17, 11, 14), (9, 12, 13, 16), (10, 15))</code></pre>
+</div>
+</div>
+<div id="439c1a56" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-27T16:52:20.360392+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-27T16:52:20.366357+00:00&quot;,&quot;total&quot;:0.005969311000001198}}" data-execution_count="11">
+<hr>
+<p><a href="https://github.com/dbikard/dgrec/blob/main/dgrec/analysis.py#L179" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="classify_genotype" class="level3">
+<h3 class="anchored" data-anchor-id="classify_genotype">classify_genotype</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> classify_genotype(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    genotype:<span class="bu">str</span>, <span class="co"># genotype string, e.g. "G90A,A101G"</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    aln:TRAlignment, <span class="co"># positional annotation of the amplicon</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Counts per (position class, observation), plus molecule-level summaries.</em></p>
+<p><code>dgr_consistent</code> means every mutation is one a conversion carrying reverse-transcriptase errors could produce. <code>fidelity</code> is the fraction of mutations at divergent positions that carry the TR base; it is measured within observed events, so it needs no conversion-tract model.</p>
+</section>
+</div>
+<div id="5cc0b43c" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>classify_genotype(<span class="st">'G8A,A11G,G17A,A14C'</span>, aln)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'n_mutations': 4,
+ 'counts': {('A-div', 'to_TR'): 2, ('A-shared', 'to_third'): 2},
+ 'conversion_evidence': 2,
+ 'div_positions_mutated': 2,
+ 'rt_errors': 2,
+ 'unexplained': 0,
+ 'dgr_consistent': True,
+ 'fidelity': 1.0,
+ 'k_TR_A': 4,
+ 'k_TR_GC': 0,
+ 'k_TR_T': 0}</code></pre>
+</div>
+</div>
+<div id="ad352031" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-27T16:52:20.368096+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-27T16:52:20.372279+00:00&quot;,&quot;total&quot;:0.004187910999988276}}" data-execution_count="13">
+<hr>
+<p><a href="https://github.com/dbikard/dgrec/blob/main/dgrec/analysis.py#L214" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="annotate_genotype" class="level3">
+<h3 class="anchored" data-anchor-id="annotate_genotype">annotate_genotype</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> annotate_genotype(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    genotype:<span class="bu">str</span>, <span class="co"># genotype string</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    aln:TRAlignment, <span class="co"># positional annotation of the amplicon</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    sep:<span class="bu">str</span><span class="op">=</span><span class="st">'|'</span>, <span class="co"># separator between a mutation and its tag</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Render a genotype with each mutation tagged by class, for inspection.</em></p>
+<p>A derived view: the canonical genotype string is unchanged, stays comparable between analyses, and remains the key for UMI grouping. Annotated strings must not be used as keys.</p>
+</section>
+</div>
+<div id="fac71dbc" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>annotate_genotype(<span class="st">'G8A,A11G,G17A,A14C'</span>, aln)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>'G8A|Adiv&gt;TR,A11G|Ash&gt;3rd,G17A|Adiv&gt;TR,A14C|Ash&gt;3rd'</code></pre>
+</div>
+</div>
+<div id="35020388" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-27T16:52:20.376511+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-27T16:52:20.382894+00:00&quot;,&quot;total&quot;:0.0063878210000041236}}" data-execution_count="15">
+<hr>
+<p><a href="https://github.com/dbikard/dgrec/blob/main/dgrec/analysis.py#L229" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="calibrate_null" class="level3">
+<h3 class="anchored" data-anchor-id="calibrate_null">calibrate_null</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calibrate_null(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    gen_list:<span class="bu">list</span>, <span class="co"># (genotype, count) pairs from get_genotypes</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    aln:TRAlignment, <span class="co"># positional annotation of the amplicon</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    covered:<span class="bu">tuple</span><span class="op">=</span><span class="va">None</span>, <span class="co"># (start, end) of ref_seq the reads actually span</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Null probability that a noise mutation lands on a TR adenine.</em></p>
+<p>Estimated from sequence outside the VR, where neither conversion nor mutagenesis acts, split by base: adenines and G/C do not carry the same sequencing error rate, and assuming they do misstates the null badly.</p>
+<p>Pools per-position rates after trimming the noisiest, rather than pooling all. Off-target reads - failed clusters, index hopping, adapter readthrough - disagree with the reference almost everywhere, so the few surviving read-level filtering inflate whichever positions they reach. Pooling lets one such position set the rate for its whole base class: in the data this was built on that raised the adenine null threefold and reported zero DGR molecules in a sample that is ~7% converted.</p>
+<p>Returns (rate at A, rate at G/C, p0).</p>
+</section>
+</div>
+<div id="38396d3d" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># a toy library: one candidate molecule, a quiet background at flanking adenines,</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co"># a noisier one at flanking G/C (as real data shows), and the unmutated majority</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>_flankA  <span class="op">=</span> [q <span class="cf">for</span> q <span class="kw">in</span> aln.outside <span class="cf">if</span> aln.ref_seq[q] <span class="op">==</span> <span class="st">"A"</span>]</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>_flankGC <span class="op">=</span> [q <span class="cf">for</span> q <span class="kw">in</span> aln.outside <span class="cf">if</span> aln.ref_seq[q] <span class="kw">in</span> (<span class="st">"G"</span>, <span class="st">"C"</span>)]</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>_gen_list <span class="op">=</span> ([(<span class="st">"G8A,A11G,G17A,A14C"</span>, <span class="dv">3</span>)]</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>             <span class="op">+</span> [(<span class="ss">f"A</span><span class="sc">{</span>q<span class="sc">}</span><span class="ss">G"</span>, <span class="dv">1</span>) <span class="cf">for</span> q <span class="kw">in</span> _flankA]</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>             <span class="op">+</span> [(<span class="ss">f"</span><span class="sc">{</span>aln<span class="sc">.</span>ref_seq[q]<span class="sc">}{</span>q<span class="sc">}</span><span class="ss">A"</span>, <span class="dv">50</span>) <span class="cf">for</span> q <span class="kw">in</span> _flankGC]</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>             <span class="op">+</span> [(<span class="st">""</span>, <span class="dv">100000</span>)])</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>calibrate_null(_gen_list, aln)      <span class="co"># (rate at A, rate at G/C, p0)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>(1.1619375807131642e-05, 0.000498684639232609, 0.022769516728624536)</code></pre>
+</div>
+</div>
+<div id="80906051" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-27T16:52:20.385495+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-27T16:52:20.389616+00:00&quot;,&quot;total&quot;:0.0041262780000010935}}" data-execution_count="17">
+<hr>
+<p><a href="https://github.com/dbikard/dgrec/blob/main/dgrec/analysis.py#L283" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="dgr_pvalue" class="level3">
+<h3 class="anchored" data-anchor-id="dgr_pvalue">dgr_pvalue</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> dgr_pvalue(</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    genotype:<span class="bu">str</span>, <span class="co"># genotype string</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    aln:TRAlignment, <span class="co"># positional annotation of the amplicon</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    p0:<span class="bu">float</span>, <span class="co"># null probability from calibrate_null</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>One-sided binomial tail: are this molecule’s mutations concentrated on TR adenines?</em></p>
+<p>Conditions on the molecule’s own mutation count, so a poor-quality molecule gets more trials and its adenine count is correctly less surprising. TR-T positions are excluded from both classes.</p>
+</section>
+</div>
+<div id="203726e2" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>dgr_pvalue(<span class="st">'G8A,A11G,G17A,A14C'</span>, aln, p0<span class="op">=</span><span class="fl">0.15</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>0.00050625</code></pre>
+</div>
+</div>
+<div id="c0c8487f" class="cell" data-quarto-private-1="{&quot;key&quot;:&quot;execution&quot;,&quot;value&quot;:{&quot;iopub.execute_input&quot;:&quot;2026-08-27T16:52:20.392835+00:00&quot;,&quot;shell.execute_reply&quot;:&quot;2026-08-27T16:52:20.398375+00:00&quot;,&quot;total&quot;:0.0055445010000028105}}" data-execution_count="19">
+<hr>
+<p><a href="https://github.com/dbikard/dgrec/blob/main/dgrec/analysis.py#L298" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="find_dgr_molecules" class="level3">
+<h3 class="anchored" data-anchor-id="find_dgr_molecules">find_dgr_molecules</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_dgr_molecules(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    gen_list:<span class="bu">list</span>, <span class="co"># (genotype, count) pairs from get_genotypes</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    aln:TRAlignment, <span class="co"># positional annotation of the amplicon</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    fdr:<span class="bu">float</span><span class="op">=</span><span class="fl">0.05</span>, <span class="co"># Benjamini-Hochberg false discovery rate</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    p0:<span class="bu">float</span><span class="op">=</span><span class="va">None</span>, <span class="co"># null probability; calibrated from gen_list if None</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    covered:<span class="bu">tuple</span><span class="op">=</span><span class="va">None</span>, <span class="co"># (start, end) of ref_seq the reads span</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Search for molecules whose mutations are concentrated on TR adenines.</em></p>
+<p>Every molecule is a test and the correction runs over all of them, so a handful of strongly mutated molecules can be called against a background of millions. Returns (results, p0), results being (genotype, count, p, info) sorted by p, for the molecules passing the FDR threshold.</p>
+</section>
+</div>
+<div id="a58e1589" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>hits, p0 <span class="op">=</span> find_dgr_molecules(_gen_list, aln)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>[(g, n, <span class="ss">f'</span><span class="sc">{</span>p<span class="sc">:.2e}</span><span class="ss">'</span>) <span class="cf">for</span> g, n, p, info <span class="kw">in</span> hits]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>[('G8A,A11G,G17A,A14C', 3, '2.69e-07')]</code></pre>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/dbikard\.github\.io\/dgrec");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/dbikard/dgrec/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
