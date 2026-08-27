@@ -19,6 +19,7 @@ import click
 import csv
 from .utils import get_mutations, mut_to_str
 from .genotypes import get_mutations, correct_UMI_genotypes, genotype_UMI_counter
+from .utils import mask_low_quality
 
 # %% ../nbs/API/01_genotypes_paired.ipynb #914181e4
 def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file reading the ref_seq in the forward orientation
@@ -33,6 +34,8 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                             umi_size_rev: int = 0, #number of nucleotides at the beginning of the rev read that will be used as the UMI (if both are provided the umi will be the concatenation of both)
                             quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality. Both reads have to pass the threshold.
                             ignore_pos: list = [], #list of positions that are ignored in the genotype
+                            max_mutations: int = 15, #read pairs with more mutations than this are discarded as bad data. Raise it when genotypes are expected to differ strongly from the reference, e.g. a VR replaced by a TR-derived copy.
+                            base_quality_threshold: int = 0, #if >0, bases below this Phred score are masked and never called as mutations. 0 keeps the previous behaviour of filtering on mean read quality only.
                             N = None, #number of reads to consider (useful to get a quick view of the data without going through the whole fastq files). If None the whole data will be used.
                             **kwargs, #alignment parameters can be passed here (match, mismatch, gap_open, gap_extend)
                             ) -> dict:
@@ -83,6 +86,11 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                 umi2=str(r2.seq[:umi_size_rev])
                 umi=umi1+umi2
 
+                if base_quality_threshold>0:
+                    #mask low quality bases so that they cannot be called as mutations
+                    r1=mask_low_quality(r1, base_quality_threshold)
+                    r2=mask_low_quality(r2, base_quality_threshold)
+
                 if fwd_ref_read_size:
                     fwd_seq=r1.seq[umi_size_fwd:umi_size_fwd+fwd_ref_read_size]
                 else:
@@ -94,7 +102,9 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                     rev_seq=r2.seq[umi_size_rev:].reverse_complement()
 
                 if overlap:
-                    fwd_common_seq=str(fwd_seq[rev_span[0]:fwd_span[1]])
+                    #fwd_seq starts at fwd_span[0], so the shared region has to be
+                    #indexed relative to that start rather than in reference coordinates
+                    fwd_common_seq=str(fwd_seq[rev_span[0]-fwd_span[0]:fwd_span[1]-fwd_span[0]])
                     rev_common_seq=str(rev_seq[:overlap_size])
                     
                     if fwd_common_seq==rev_common_seq:
@@ -103,7 +113,8 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                         continue
                         
                     consensus=fwd_seq+rev_seq[overlap_size:]
-                    mutations=get_mutations(ref_seq[fwd_span[0]:rev_span[1]],consensus)
+                    mutations=get_mutations(ref_seq[fwd_span[0]:rev_span[1]],consensus,
+                                            **align_param)
                 else:
                     consensus=""
                     if fwd_span[1]-fwd_span[0]>0:
@@ -115,11 +126,14 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                                             consensus, 
                                             **align_param)
 
+                if base_quality_threshold>0:
+                    mutations=[m for m in mutations if m[2]!="N"]
+
                 if ignore_pos:
                     mutations = [m for m in mutations if m[1] not in ignore_pos]
                     
                 n_mut=len(mutations)
-                if n_mut<15: #more than 15 mutations is almost certainly bad data
+                if n_mut<max_mutations:
                     n_reads_aligned+=1
                     UMI_dict[umi].append(mut_to_str(mutations))
     
@@ -149,6 +163,8 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                         umi_size_rev: int = 0, #number of nucleotides at the beginning of the rev read that will be used as the UMI (if both are provided the umi will be the concatenation of both)
                         quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                         ignore_pos: list = [], #list of positions that are ignored in the genotype
+                        max_mutations: int = 15, #read pairs with more mutations than this are discarded as bad data
+                        base_quality_threshold: int = 0, #if >0, bases below this Phred score are masked and never called as mutations
                         reads_per_umi_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
                         save_umi_data: str = None, #path to the csv file where to save the details of the genotypes reads for each UMI. If None the data isn't saved.
                         N = None, #number of reads to consider (useful to get a quick view of the data without going through the whole fastq files). If None the whole data will be used.
@@ -168,6 +184,8 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                                          umi_size_rev=umi_size_rev,
                                          quality_threshold=quality_threshold,
                                          ignore_pos=ignore_pos,
+                                         max_mutations=max_mutations,
+                                         base_quality_threshold=base_quality_threshold,
                                          N=N,
                                          **kwargs
                                          )

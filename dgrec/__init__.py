@@ -1,3 +1,9 @@
+"""Analysing DGRec data
+
+Modules:
+
+- `dgrec.pairwise2`: Pairwise sequence alignment using a dynamic programming algorithm."""
+
 __version__ = "0.1.4"
 
 from .example_data import get_example_data_dir
