@@ -5,57 +5,43 @@
 
 ## Overview
 
-DGRec is a novel in vivo hypermutation technique that combines two
-biological systems:
+DGRec is an in vivo hypermutation technique that combines two biological systems:
 
-- **DGR** (Diversity Generating Retroelement): The DGR reverse
-  transcriptase (bRT) + Avd reverse-transcribes a **Template Repeat
-  (TR)** RNA sequence, introducing errors predominantly at **adenine
-  positions**.
-- **Recombineering** (CspRecT + mutL\*): The single-stranded recombinase
-  CspRecT integrates the mutagenic cDNA into the **Variable Repeat
-  (VR)** in a target gene, while mutL\* prevents mismatch repair from
-  correcting the mutations.
+- **DGR** (Diversity Generating Retroelement): The DGR reverse transcriptase (bRT) + Avd reverse-transcribes a **Template Repeat (TR)** RNA sequence, introducing errors predominantly at **adenine positions**.
+- **Recombineering** (CspRecT + mutL\*): The single-stranded recombinase CspRecT integrates the mutagenic cDNA into the **Variable Repeat (VR)** in a target gene, while mutL\* prevents mismatch repair from correcting the mutations.
 
-This creates a powerful tool for targeted in vivo diversification in *E.
-coli*, where adenine positions within the TR are selectively mutagenized
-while other bases remain largely unchanged.
+This creates a powerful tool for targeted in vivo diversification in *E. coli*, where adenine positions within the TR are selectively mutagenized while other bases remain largely unchanged.
 
-The [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec)
-package provides tools to:
+The [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) package provides tools to:
 
-- **Call genotypes** from amplicon sequencing data (single-end or
-  paired-end), with UMI-based deduplication to correct PCR and
-  sequencing errors
-- **Visualize mutation profiles** at nucleotide and amino acid
-  resolution
+- **Design TR sequences**: score a candidate TR from the predicted folding of its RNA, and recode a poorly mutagenic one with synonymous substitutions that leave the encoded protein unchanged
+- **Predict the diversity a TR will generate**: an LSTM model of the position- and context-dependent error profile of the reverse transcriptase, used to simulate the VR sequences reachable from a given TR
+- **Call genotypes** from amplicon sequencing data (single-end or paired-end), with UMI-based deduplication to correct PCR and sequencing errors
+- **Visualize mutation profiles** at nucleotide and amino acid resolution
 
-**Publication:** [Targeted in vivo hypermutation with
-DGRec](https://www.biorxiv.org/content/10.1101/2025.03.24.644984v1)
+**Source code:** [github.com/dbikard/dgrec](https://github.com/dbikard/dgrec)
 
-**Documentation:**
-[dbikard.github.io/dgrec](https://dbikard.github.io/dgrec/)
+**Documentation:** [dbikard.github.io/dgrec](https://dbikard.github.io/dgrec/)
+
+**Publication:** Rochette *et al.*, [Diversity-generating retroelements for programmable targeted hypermutagenesis](https://doi.org/10.1038/s41587-026-03078-4), *Nature Biotechnology* (2026)
 
 ## Install
 
-We recommend installing dgrec in a dedicated conda environment:
-
-``` sh
-conda create -n dgrec python=3.11
-conda activate dgrec
-```
-
-Install ViennaRNA (required for the TR scoring functions):
-
-``` sh
-conda install -c conda-forge -c bioconda viennarna
-```
-
-Then install dgrec:
+[`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) requires **Python 3.10 to 3.13** and installs with pip:
 
 ``` sh
 pip install git+https://github.com/dbikard/dgrec.git
 ```
+
+All dependencies, including ViennaRNA, are installed automatically — no conda environment is needed.
+
+The LSTM model needs TensorFlow, which is an optional extra because it is large:
+
+``` sh
+pip install "dgrec[lstm] @ git+https://github.com/dbikard/dgrec.git"
+```
+
+The package also builds a small C extension that speeds up read alignment. If the machine has no C compiler or no Python development headers, the build is skipped and a slower pure-Python aligner is used instead; installing the headers (for example `apt install python3-dev`, or working inside a conda environment) restores the fast path.
 
 ## How to use
 
@@ -150,12 +136,17 @@ The package can also be used directly in Python for more flexibility.
 
 #### Calling genotypes
 
-Load a FASTQ file and a reference sequence, then call genotypes with UMI
-deduplication. The `ignore_pos` parameter excludes positions at the
-edges of the amplicon where sequencing quality is low.
+Load a FASTQ file and a reference sequence, then call genotypes with UMI deduplication. The `ignore_pos` parameter excludes positions at the edges of the amplicon where sequencing quality is low.
 
 ``` python
 import dgrec
+```
+
+The package bundles a small example dataset so that everything below can be run as written. `dgrec.get_example_data_dir()` returns its path; it contains `sacB_example.fastq.gz` and `sacB_ref.fasta` used here, a paired-end example, and the trained models.
+
+``` python
+#The package ships with a small example dataset; this is where it lives
+data_path = dgrec.get_example_data_dir()
 ```
 
 ``` python
@@ -206,21 +197,76 @@ for g in gen_list[:20]:
     1   A48T,A86G
     1   A61T,A68T,A72G,A79C,A91G
 
-Each genotype is represented as a comma-separated list of mutations in
-the format `[RefBase][Position][AltBase]`. The list is sorted by the
-number of UMI-deduplicated molecules supporting each genotype. The first
-entry is typically the wild-type (unmutated) sequence.
+Each genotype is represented as a comma-separated list of mutations in the format `[RefBase][Position][AltBase]`. The list is sorted by the number of UMI-deduplicated molecules supporting each genotype. The first entry is typically the wild-type (unmutated) sequence.
 
 #### Visualizing mutations
 
-Plot mutation counts at each position. The shaded region indicates the
-TR (Template Repeat) range where DGRec mutagenesis is active. Note the
-strong enrichment of mutations at adenine positions within the TR — the
-hallmark DGRec signature (in this example the TR was designed to have an
-identical sequence to the VR).
+Plot mutation counts at each position. The shaded region indicates the TR (Template Repeat) range where DGRec mutagenesis is active. Note the strong enrichment of mutations at adenine positions within the TR — the hallmark DGRec signature (in this example the TR was designed to have an identical sequence to the VR).
 
 ``` python
 fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name="sacB", TR_range=[50,119])
 ```
 
-![](index_files/figure-commonmark/cell-6-output-1.png)
+<img src="index_files/figure-commonmark/cell-7-output-1.png" width="1617" height="449" />
+
+### Designing TR sequences
+
+Not every sequence works as a TR: whether the reverse transcriptase can read the dgrRNA depends on how that RNA folds. [`score`](https://dbikard.github.io/dgrec/API/predictions.html#score) predicts, from the folding energy, whether a candidate TR will be mutagenized, on a scale from 0 (poor) to 1 (good).
+
+``` python
+TR_bad  = 'TTAGCGAATGGCGAAATTCGTAAACGCCCTCTGATCGAAACCAACGGCGAAACGGGTGAGATCGTGTGGG'
+TR_good = 'AAATGATCGCCAAATCTGAACAGGAAATTGGCAAAGCAACCGCTAAATACTTTTTCTACTCAAACATTAT'
+
+print('bad TR  score =', dgrec.score(TR_bad))
+print('good TR score =', dgrec.score(TR_good))
+```
+
+    bad TR  score = 0.23
+    good TR score = 0.84
+
+A TR that scores poorly can often be rescued without changing the protein it encodes: [`optimize_sequence`](https://dbikard.github.io/dgrec/API/predictions.html#optimize_sequence) searches synonymous codon substitutions for a variant that folds better. It returns one row per candidate, ranked, each with the recoded sequence and its two scores.
+
+``` python
+import pandas as pd
+from dgrec.predictions import optimize_sequence
+
+variants = optimize_sequence(TR_bad, N=5, CHANGES=6, plot=False)
+pd.DataFrame(variants)[['New_Variant', 'Score_TRSp', 'Score_TRSpAvd']]
+```
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | New_Variant | Score_TRSp | Score_TRSpAvd |
+|----|----|----|----|
+| 0 | TTAGCGAACGGCGAAATCCGTAAACGCCCTCTGATCGAAACCAACG... | 0.74 | 0.79 |
+| 1 | TTAGCGAATGGCGAAATCCGTAAACGCCCTCTGATCGAAACCAACG... | 0.66 | 0.81 |
+| 2 | TTAGCGAATGGTGAAATCCGTAAACGCCCTCTGATCGAAACCAACG... | 0.64 | 0.82 |
+| 3 | TTAGCGAACGGTGAAATTCGTAAACGCCCTCTGATCGAAACCAACG... | 0.62 | 0.81 |
+| 4 | TTAGCGAATGGCGAAATCCGTAAACGCCCTCTGATCGAAACCAATG... | 0.58 | 0.78 |
+
+</div>
+
+Each row is a recoded variant that encodes the same protein as `TR_bad`, with the predicted scores for the two folding features. The best one here lifts a TR that scored 0.23 into the range of a usable template.
+
+[`optimize_sequence`](https://dbikard.github.io/dgrec/API/predictions.html#optimize_sequence) also accepts constraints on which amino acids each position is allowed to reach under mutagenesis, so diversification can be directed at chosen residues — see the [predictions API](API/predictions.html).
+
+To predict *which* variants a given TR will produce, rather than how efficiently it will be mutagenized, use the LSTM model in [`dgrec.lstm`](API/lstm.html) ([`generate_sequences_oneTR`](https://dbikard.github.io/dgrec/API/lstm.html#generate_sequences_onetr)). It requires the `lstm` extra.
+
+## Citation
+
+If you use [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec), please cite:
+
+> Rochette P, Lopez-Rodriguez E, Wen DJ, Régnier L, *et al.* Diversity-generating retroelements for programmable targeted hypermutagenesis. *Nature Biotechnology* (2026). doi:[10.1038/s41587-026-03078-4](https://doi.org/10.1038/s41587-026-03078-4)
+
+A `CITATION.cff` file is included in the repository.

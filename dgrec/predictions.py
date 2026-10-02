@@ -1,4 +1,4 @@
-"""Machine learning models for predicting TR (Template Repeat) quality. Only ~9% of random TRs show >10% mutagenesis, making prediction essential. Includes functions to score individual sequences, predict mutagenesis percentages, and optimize TR sequences using beam search to balance protein function, TR folding, and amino acid accessibility under mutagenesis.
+"""Machine learning models for predicting TR (Template Repeat) quality. Only a minority of random TR sequences are highly mutagenic, which is what makes prediction useful. Includes functions to score individual sequences, predict mutagenesis percentages, and optimize TR sequences using beam search to balance protein function, TR folding, and amino acid accessibility under mutagenesis.
 
 Docs: https://dbikard.github.io/dgrec/API/predictions.html.md"""
 
@@ -342,9 +342,10 @@ def propose_single_codon_changes(
 
     return variants
 
-def evaluate_sequences(variants):
+def evaluate_sequences(variants, plot=True):
     """
     Encode sequences, run classifiers, return list of dicts with scores.
+    Set `plot=False` to skip the scatter plot of the two scores.
     """
     seqs = [v for v in variants]
     Scores=score_list(seqs, #A list of strings of TRs DNA sequences
@@ -352,12 +353,13 @@ seqs, #A list of strings of TRs names
 features=2)
     Score_TRSp = list(Scores['TR_Score_Sp'])
     Score_TRSpAvd = list(Scores['TR_Score_Avd'])
-    plt.figure(figsize=(6,6))
-    plt.scatter(Score_TRSp, Score_TRSpAvd, alpha=0.7)
-    plt.xlabel("Score_TRSp")
-    plt.ylabel("Score_TRSpAvd")
-    plt.grid(True)
-    plt.show()
+    if plot:
+        plt.figure(figsize=(6,6))
+        plt.scatter(Score_TRSp, Score_TRSpAvd, alpha=0.7)
+        plt.xlabel("Score_TRSp")
+        plt.ylabel("Score_TRSpAvd")
+        plt.grid(True)
+        plt.show()
     results = []
     for i, seq,  in enumerate(variants):
         results.append({
@@ -389,7 +391,8 @@ def optimize_sequence(
     N = 1,
     forbidden_positions = [],
     threshold = 0.7,
-    codon_usage = codon_usage_ecoli
+    codon_usage = codon_usage_ecoli,
+    plot = True
 ):
     """
     Optimize a DNA sequence via synonymous codon substitutions.
@@ -449,7 +452,8 @@ def optimize_sequence(
     - The algorithm keeps only Pareto-optimal candidates at each iteration.
     - If no variant satisfies the threshold criteria, the best-scoring
       sequence after `CHANGES` iterations is returned.
-    - Internal scoring and plotting are handled by `evaluate_sequences`.
+    - Internal scoring and plotting are handled by `evaluate_sequences`;
+      pass `plot=False` to suppress the scatter plot drawn at each round.
 
     Examples
     --------
@@ -498,7 +502,7 @@ def optimize_sequence(
         seq=original_seq
         forbidden_final=forbidden_positions
                     
-    evaluated = evaluate_sequences(beam)
+    evaluated = evaluate_sequences(beam, plot=plot)
 
     good = [
         v for v in evaluated
@@ -528,7 +532,7 @@ def optimize_sequence(
             )
 
         variants = np.unique(variants)
-        evaluated = evaluate_sequences(variants)
+        evaluated = evaluate_sequences(variants, plot=plot)
         good = [
             v for v in evaluated
             if v["Score_TRSp"] >= threshold and v["Score_TRSpAvd"] >= threshold
