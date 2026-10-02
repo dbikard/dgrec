@@ -21,7 +21,7 @@ licenses = {
 }
 statuses = [ '1 - Planning', '2 - Pre-Alpha', '3 - Alpha',
     '4 - Beta', '5 - Production/Stable', '6 - Mature', '7 - Inactive' ]
-py_versions = '3.6 3.7 3.8 3.9 3.10'.split()
+py_versions = '3.6 3.7 3.8 3.9 3.10 3.11 3.12 3.13'.split()
 
 requirements = shlex.split(cfg.get('requirements', ''))
 if cfg.get('pip_requirements'): requirements += shlex.split(cfg.get('pip_requirements', ''))
@@ -29,7 +29,9 @@ min_python = cfg['min_python']
 lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
 dev_requirements = (cfg.get('dev_requirements') or '').split()
 
-EXTENSIONS=[Extension("dgrec.cpairwise2", ["dgrec/cpairwise2module.c"])]
+# optional=True: the extension is a speed-up with a pure-Python fallback in pairwise2.py,
+# so a machine without a compiler or Python headers should still get a working install.
+EXTENSIONS=[Extension("dgrec.cpairwise2", ["dgrec/cpairwise2module.c"], optional=True)]
 
 setuptools.setup(
     name = cfg['lib_name'],

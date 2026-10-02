@@ -7,12 +7,15 @@ name = "dgrec"
 dynamic = ["version"]
 description = "Analysing DGRec data"
 readme = "README.md"
-requires-python = ">=3.7"
-license = {text = "Apache-2.0"}
+requires-python = ">=3.10,<3.14"
+license = "Apache-2.0"
+license-files = ["LICENSE", "dgrec/LICENSE.biopython"]
 authors = [{name = "David Bikard", email = "david.bikard@pasteur.fr"}]
 keywords = ['nbdev', 'jupyter', 'notebook', 'python']
-classifiers = ["Natural Language :: English", "Intended Audience :: Developers", "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only"]
-dependencies = ['fastcore', 'pandas', 'biopython', 'click', 'matplotlib', 'seaborn', 'tqdm', 'scikit-learn==1.7.1', 'logomaker', 'svgwrite']
+classifiers = ["Natural Language :: English", "Intended Audience :: Science/Research", "Development Status :: 4 - Beta", "Topic :: Scientific/Engineering :: Bio-Informatics", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13"]
+# ViennaRNA is a runtime dependency, not an optional one: dgrec/__init__.py imports
+# predictions and encoding, which both import it at module level.
+dependencies = ['fastcore', 'pandas', 'biopython', 'click', 'matplotlib', 'seaborn', 'tqdm', 'scikit-learn==1.7.1', 'logomaker', 'svgwrite', 'ViennaRNA']
 
 [project.urls]
 Repository = "https://github.com/dbikard/dgrec"
@@ -23,7 +26,7 @@ dgrec = "dgrec._modidx:d"
 
 [project.optional-dependencies]
 lstm = ['tensorflow[and-cuda]>=2.17']
-dev = ['ViennaRNA', 'cython']
+dev = ['cython']
 
 
 [project.scripts]
@@ -33,8 +36,14 @@ dgrec = "dgrec.cli:dgrec"
 version = {attr = "dgrec.__version__"}
 
 [tool.setuptools.packages.find]
-include = ["dgrec"]
+include = ["dgrec", "dgrec.*"]
 
+# NOTE: this file is the single source of truth for dependencies and the Python range.
+# setuptools overrides setup.py/settings.ini with the values declared here.
 [tool.nbdev]
+# nbdev reads its configuration from here (this table's presence makes pyproject.toml the
+# config file), NOT from settings.ini - keys left out here fall back to nbdev defaults.
+branch = "master"
+min_python = "3.10"
 jupyter_hooks = true
 custom_sidebar = false

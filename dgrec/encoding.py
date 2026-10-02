@@ -10,7 +10,7 @@ __all__ = ['encode_tr_list']
 # %% ../nbs/API/04_encoding.ipynb #85fac3de-1110-42ce-9848-be66f1efdc1c
 import os, atexit
 import concurrent.futures as _futures
-import ViennaRNA as RNA
+import RNA
 import numpy as np
 from tqdm import tqdm
 
