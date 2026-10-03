@@ -7,14 +7,14 @@
 
 DGRec is an in vivo hypermutation technique that combines two biological systems:
 
-- **DGR** (Diversity Generating Retroelement): The DGR reverse transcriptase (bRT) + Avd reverse-transcribes a **Template Repeat (TR)** RNA sequence, introducing errors predominantly at **adenine positions**.
-- **Recombineering** (CspRecT + mutL\*): The single-stranded recombinase CspRecT integrates the mutagenic cDNA into the **Variable Repeat (VR)** in a target gene, while mutL\* prevents mismatch repair from correcting the mutations.
+- **DGR** (Diversity Generating Retroelement): the DGR reverse transcriptase (bRT) and its accessory protein Avd reverse-transcribe the **template region (TR)**, a segment of a small non-coding RNA called the dgrRNA, making errors predominantly at **adenine positions**.
+- **Recombineering** (CspRecT + mutL\*): the single-strand annealing protein CspRecT integrates the mutagenic cDNA into the **variable region (VR)** of a target gene, while mutL\* prevents mismatch repair from correcting the mutations.
 
 This creates a powerful tool for targeted in vivo diversification in *E. coli*, where adenine positions within the TR are selectively mutagenized while other bases remain largely unchanged.
 
 The [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) package provides tools to:
 
-- **Design TR sequences**: score a candidate TR from the predicted folding of its RNA, and recode a poorly mutagenic one with synonymous substitutions that leave the encoded protein unchanged
+- **Design TR sequences**: score a candidate TR from the predicted folding of its dgrRNA, and recode a poorly mutagenic one using codon substitutions that leave the protein encoded by the target gene unchanged
 - **Predict the diversity a TR will generate**: an LSTM model of the position- and context-dependent error profile of the reverse transcriptase, used to simulate the VR sequences reachable from a given TR
 - **Call genotypes** from amplicon sequencing data (single-end or paired-end), with UMI-based deduplication to correct PCR and sequencing errors
 - **Visualize mutation profiles** at nucleotide and amino acid resolution
@@ -45,7 +45,7 @@ The package also builds a small C extension that speeds up read alignment. If th
 
 ## Quick start
 
-[`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) is used at two points in a DGRec experiment: beforehand, to choose a template repeat
+[`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) is used at two points in a DGRec experiment: beforehand, to choose a template region
 that will actually be mutagenized, and afterwards, to measure what the experiment produced.
 The package ships with a small example dataset, so the code below runs as written.
 
@@ -59,8 +59,10 @@ dgrec.score('AAATGATCGCCAAATCTGAACAGGAAATTGGCAAAGCAACCGCTAAATACTTTTTCTACTCAAACAT
 
     0.84
 
-A sequence that scores poorly can usually be rescued by recoding it with synonymous
-substitutions, which leaves the encoded protein untouched — see
+A sequence that scores poorly can usually be rescued by recoding. The TR is itself non-coding,
+but it has to stay homologous to the variable region it diversifies, and that region lies in a
+protein-coding gene — so the recoding uses codon substitutions that are synonymous for that
+protein, introduced into both. See
 [How to use](https://dbikard.github.io/dgrec/how_to.html#before-the-experiment-designing-a-tr).
 
 **After the experiment** — call genotypes from the amplicon reads, deduplicated by UMI:
@@ -91,7 +93,7 @@ fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name='sacB', TR_range=[50, 
     Median number of reads per UMI: 1.0
     Number of genotypes: 123
 
-<img src="index_files/figure-commonmark/cell-3-output-2.png" width="1617" height="449" />
+![](index_files/figure-commonmark/cell-3-output-2.png)
 
 The shaded region is the TR range, where DGRec mutagenesis is active. Note the enrichment of
 mutations at adenine positions within it — the hallmark DGRec signature.

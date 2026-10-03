@@ -1,4 +1,4 @@
-"""Machine learning models for predicting TR (Template Repeat) quality. Only a minority of random TR sequences are highly mutagenic, which is what makes prediction useful. Includes functions to score individual sequences, predict mutagenesis percentages, and optimize TR sequences using beam search to balance protein function, TR folding, and amino acid accessibility under mutagenesis.
+"""Machine learning models for predicting TR (template region) quality. Only a minority of random TR sequences are highly mutagenic, which is what makes prediction useful. Includes functions to score individual sequences, predict mutagenesis percentages, and optimize TR sequences using beam search to balance the function of the target protein, dgrRNA folding, and amino acid accessibility under mutagenesis.
 
 Docs: https://dbikard.github.io/dgrec/API/predictions.html.md"""
 
