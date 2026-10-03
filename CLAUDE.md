@@ -1,12 +1,17 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this
+repository. Claude Code was used as a coding assistant during the development of this package;
+the commits concerned carry a `Co-Authored-By: Claude` trailer, and the scope of that assistance
+is declared in the accompanying publication. This file contains development conventions only —
+no scientific results depend on it.
 
 ## Project Overview
 
 DGRec is a bioinformatics tool for analyzing DGRec (Diversity Generating Retroelement + recombineering) data. DGRec is a novel in vivo hypermutation technique. The DGRec package processes sequencing reads to identify genotypes and includes ML models for predicting mutagenesis outcomes.
 
-Publication: https://www.biorxiv.org/content/10.1101/2025.03.24.644984v1
+Publication: Rochette et al., "Diversity-generating retroelements for programmable targeted
+hypermutagenesis", Nature Biotechnology (2026). https://doi.org/10.1038/s41587-026-03078-4
 
 ## DGRec Biology
 
@@ -26,7 +31,7 @@ DGRec combines **DGR** (Diversity Generating Retroelement, from Bordetella phage
 **TR design constraints**:
 - TR length: 50-200 bp, with mutations predominantly in the middle (recombineering needs homology arms on both sides)
 - TR self-mutagenesis: progressive adenine loss over time as A→non-A mutations accumulate
-- Only ~9% of random TRs show >10% mutagenesis — hence the prediction models
+- Only a minority of random TRs are strongly mutagenic — hence the prediction models
 
 ## Development Framework
 
@@ -35,9 +40,8 @@ This project uses **nbdev3** - all Python source code is auto-generated from Jup
 ## Common Commands
 
 ```bash
-# Install dependencies (ViennaRNA required for predictions)
-conda install -c conda-forge -c bioconda viennarna
-pip install -e .
+# Install for development (ViennaRNA comes in as a regular dependency)
+pip install -e ".[dev]"
 
 # Export notebooks to Python modules (after editing notebooks)
 nbdev-export
@@ -80,7 +84,7 @@ dgrec genotypes_paired fwd.fastq rev.fastq ref.fasta --fwd_span 0 150 --rev_span
 | `nbs/API/02_plotting.ipynb` | `dgrec/plotting.py` | Visualization of mutation profiles and amino acid diversity |
 | `nbs/API/03_analysis.ipynb` | `dgrec/analysis.py` | Mutation rate analysis (A-specific elevated rates in VR are the hallmark DGRec signature) |
 | `nbs/API/04_encoding.ipynb` | `dgrec/encoding.py` | Sequence encoding — computes ΔE feature that predicts whether TR RNA is accessible for bRT binding |
-| `nbs/API/05_predictions.ipynb` | `dgrec/predictions.py` | ML predictions of TR activity (only ~9% of random TRs produce >10% mutagenesis) |
+| `nbs/API/05_predictions.ipynb` | `dgrec/predictions.py` | ML predictions of TR activity, and synonymous recoding of poorly mutagenic TRs |
 | `nbs/API/07_utils.ipynb` | `dgrec/utils.py` | Core utilities: alignment, genotype validation, codon tables, DGRec signature testing |
 | `nbs/API/08_cli.ipynb` | `dgrec/cli.py` | Click-based CLI |
 | `nbs/API/09_lstm.ipynb` | `dgrec/lstm.py` | LSTM model that captures bRT's position-dependent, context-dependent error patterns including the snowball effect |
@@ -119,9 +123,20 @@ Mutations are comma-separated: `A50T,G75C,T150A` where format is `[RefBase][Posi
 
 ## Dependencies
 
-- **scikit-learn==1.7.1** is pinned for model compatibility, **tensorflow[and-cuda]>=2.17** for the LSTM module
-- **ViennaRNA** is required for the encoding module (RNA secondary structure)
-- Pre-trained models are bundled in `dgrec/example_data/`
+**`pyproject.toml` is the single source of truth** for dependencies and the supported Python
+range: setuptools overrides the values in `setup.py`/`settings.ini` with it, so editing
+`settings.ini` requirements alone has no effect. Keep the two in sync if you change either.
+
+- Supported Python: **3.10-3.13** (`scikit-learn==1.7.1` requires >=3.10)
+- **scikit-learn==1.7.1** is pinned for model compatibility
+- **ViennaRNA** is a runtime dependency: `dgrec/__init__.py` imports `predictions` and
+  `encoding`, which import it at module level. Import it as `RNA` — the name provided by both
+  the PyPI wheel and the conda package
+- **tensorflow[and-cuda]>=2.17** is the optional `lstm` extra, guarded by `_require_tensorflow()`
+- `dgrec/cpairwise2module.c` builds an optional C extension; `pairwise2.py` falls back to pure Python
+  if it is unavailable. `pairwise2.py` and `cpairwise2module.c` are vendored from Biopython and
+  keep their own licence (`dgrec/LICENSE.biopython`) - do not relicense them
+- Pre-trained models and example data are bundled in `dgrec/example_data/`
 
 ## Testing in nbdev
 

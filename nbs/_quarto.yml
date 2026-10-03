@@ -10,10 +10,14 @@ format:
 website:
   twitter-card: true
   open-graph: true
-  repo-actions: [issue]
+  repo-actions: [source, issue]
   navbar:
     background: primary
     search: true
+    right:
+      - icon: github
+        href: https://github.com/dbikard/dgrec
+        aria-label: "Source code on GitHub"
   sidebar:
     style: floating
 

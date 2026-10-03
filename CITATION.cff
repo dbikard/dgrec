@@ -1,0 +1,83 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the software and the paper below."
+title: "dgrec: analysis and design tools for DGRec targeted hypermutagenesis"
+abstract: >-
+  Python package for analysing DGRec (diversity-generating retroelement +
+  recombineering) experiments and for designing template regions: genotype
+  calling from amplicon sequencing with UMI deduplication, mutation-profile
+  visualisation, RNA-folding-based scoring of TR sequences, synonymous recoding
+  of poorly mutagenic TRs, and an LSTM model of TR-to-VR mutational profiles.
+type: software
+authors:
+  - family-names: Bikard
+    given-names: David
+    email: david.bikard@pasteur.fr
+    affiliation: "Institut Pasteur, Université Paris Cité, Synthetic Biology Unit"
+  - family-names: Régnier
+    given-names: Léo
+    affiliation: "Laboratoire de Physique de l'École Normale Supérieure, CNRS UMR 8023, PSL Research University"
+  - family-names: Rochette
+    given-names: Paul
+    affiliation: "Institut Pasteur, Université Paris Cité, Synthetic Biology Unit"
+license: Apache-2.0
+repository-code: "https://github.com/dbikard/dgrec"
+url: "https://dbikard.github.io/dgrec"
+keywords:
+  - diversity-generating retroelement
+  - directed evolution
+  - targeted hypermutagenesis
+  - recombineering
+  - bioinformatics
+# Replace with the Bioinformatics methods paper once it is published.
+preferred-citation:
+  type: article
+  title: "Diversity-generating retroelements for programmable targeted hypermutagenesis"
+  journal: "Nature Biotechnology"
+  doi: "10.1038/s41587-026-03078-4"
+  year: 2026
+  month: 4
+  authors:
+    - family-names: Rochette
+      given-names: Paul
+    - family-names: Lopez-Rodriguez
+      given-names: Elena
+    - family-names: Wen
+      given-names: "David J."
+    - family-names: Régnier
+      given-names: Léo
+    - family-names: Fan
+      given-names: Catherine
+    - family-names: Maikova
+      given-names: Anna
+    - family-names: Rostain
+      given-names: William
+    - family-names: Wang
+      given-names: Linhan
+    - family-names: Nooraddin
+      given-names: Imran
+    - family-names: Maire
+      given-names: Amandine
+    - family-names: Vittot
+      given-names: Paul
+    - family-names: Barrabes
+      given-names: Nathan
+    - family-names: Cerdas-Mejías
+      given-names: "Karol Melissa"
+    - family-names: Bouvier
+      given-names: Auguste
+    - family-names: Chrysostomou
+      given-names: Thea
+    - family-names: Subrini
+      given-names: Orso
+    - family-names: Wolff
+      given-names: Nicolas
+    - family-names: Monasson
+      given-names: Rémi
+    - family-names: Cocco
+      given-names: Simona
+    - family-names: Shipman
+      given-names: "Seth L."
+    - family-names: Laurenceau
+      given-names: Raphael
+    - family-names: Bikard
+      given-names: David

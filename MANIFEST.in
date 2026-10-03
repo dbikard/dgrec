@@ -1,6 +1,6 @@
 include settings.ini
 include LICENSE
-include CONTRIBUTING.md
+include dgrec/LICENSE.biopython
 include README.md
 recursive-include dgrec/example_data *
 recursive-exclude * __pycache__
