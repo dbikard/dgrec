@@ -342,10 +342,10 @@ def propose_single_codon_changes(
 
     return variants
 
-def evaluate_sequences(variants, plot=True):
+def evaluate_sequences(variants, plot=False):
     """
     Encode sequences, run classifiers, return list of dicts with scores.
-    Set `plot=False` to skip the scatter plot of the two scores.
+    Set `plot=True` to also draw a scatter plot of the two scores.
     """
     seqs = [v for v in variants]
     Scores=score_list(seqs, #A list of strings of TRs DNA sequences
@@ -392,7 +392,7 @@ def optimize_sequence(
     forbidden_positions = [],
     threshold = 0.7,
     codon_usage = codon_usage_ecoli,
-    plot = True
+    plot = False
 ):
     """
     Optimize a DNA sequence via synonymous codon substitutions.
@@ -453,7 +453,7 @@ def optimize_sequence(
     - If no variant satisfies the threshold criteria, the best-scoring
       sequence after `CHANGES` iterations is returned.
     - Internal scoring and plotting are handled by `evaluate_sequences`;
-      pass `plot=False` to suppress the scatter plot drawn at each round.
+      pass `plot=True` to draw a scatter plot at each round of the search.
 
     Examples
     --------

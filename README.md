@@ -230,7 +230,7 @@ A TR that scores poorly can often be rescued without changing the protein it enc
 import pandas as pd
 from dgrec.predictions import optimize_sequence
 
-variants = optimize_sequence(TR_bad, N=5, CHANGES=6, plot=False)
+variants = optimize_sequence(TR_bad, N=5, CHANGES=6)
 pd.DataFrame(variants)[['New_Variant', 'Score_TRSp', 'Score_TRSpAvd']]
 ```
 
@@ -269,4 +269,4 @@ If you use [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec), please
 
 > Rochette P, Lopez-Rodriguez E, Wen DJ, Régnier L, *et al.* Diversity-generating retroelements for programmable targeted hypermutagenesis. *Nature Biotechnology* (2026). doi:[10.1038/s41587-026-03078-4](https://doi.org/10.1038/s41587-026-03078-4)
 
-A `CITATION.cff` file is included in the repository.
+A separate paper describing the bioinformatics and sequence-design tools provided by this package is in preparation; once it is published, please cite both. A `CITATION.cff` file is included in the repository.
