@@ -7,8 +7,3 @@ website:
   description: "Analysing DGRec data"
   repo-branch: master
   repo-url: "https://github.com/dbikard/dgrec"
-
-format-links:
-  - html
-  - format: commonmark
-    text: Markdown
