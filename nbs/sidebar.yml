@@ -2,6 +2,7 @@ website:
   sidebar:
     contents:
       - index.ipynb
+      - how_to.ipynb
       - section: API
         contents:
           - API/00_genotypes.ipynb

@@ -43,131 +43,45 @@ pip install "dgrec[lstm] @ git+https://github.com/dbikard/dgrec.git"
 
 The package also builds a small C extension that speeds up read alignment. If the machine has no C compiler or no Python development headers, the build is skipped and a slower pure-Python aligner is used instead; installing the headers (for example `apt install python3-dev`, or working inside a conda environment) restores the fast path.
 
-## How to use
+## Quick start
 
-### Command line interface
+[`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) is used at two points in a DGRec experiment: beforehand, to choose a template repeat
+that will actually be mutagenized, and afterwards, to measure what the experiment produced.
+The package ships with a small example dataset, so the code below runs as written.
 
-#### Single reads
-
-``` sh
-dgrec genotypes fastq_path reference_path -o genotypes.csv
-```
-
-    Usage: dgrec genotypes [OPTIONS] FASTQ REF
-
-    Options:
-      -u, --umi_size INTEGER          Number of nucleotides at the beginning of
-                                      the read that will be used as the UMI
-      -q, --quality_threshold INTEGER
-                                      threshold value used to filter out reads of
-                                      poor average quality
-      -i, --ignore_pos LIST           list of positions that are ignored in the
-                                      genotype, e.g. [0,1,149,150]
-      --match FLOAT                   match parameter of the aligner
-      --mismatch FLOAT                mismatch parameter of the aligner
-      --gap_open FLOAT                gap_open parameter of the aligner
-      --gap_extend FLOAT              gap_extend parameter of the aligner
-      -r, --reads_per_umi_thr INTEGER
-                                      minimum number of reads required to take a
-                                      UMI into account. Using a number >2 enables
-                                      to perform error correction for UMIs with
-                                      multiple reads
-      -s, --save_umi_data TEXT        path to a csv file to save the details of
-                                      the genotypes reads for each UMI. If None
-                                      the data isn't saved.
-      -o, --output TEXT               output file path
-      --help                          Show this message and exit.
-
-#### Paired reads
-
-``` sh
-dgrec genotypes_paired fwd_fastq_path rev_fastq_path reference_path --fwd_span 0 150 --rev_span 30 150 -o genotypes.csv
-```
-
-    Usage: dgrec genotypes_paired [OPTIONS] FASTQ_FWD FASTQ_REV REF
-
-      Calls dgrec.genotypes_paired.get_genotypes_paired
-
-    Options:
-      --fwd_span <INTEGER INTEGER>...
-                                      Span of the reference sequence read in the
-                                      forward orientation format: start end
-                                      [required]
-      --rev_span <INTEGER INTEGER>...
-                                      Span of the reference sequence read in the
-                                      reverse orientation format: start end
-                                      [required]
-      -p, --require_perfect_pair_agreement
-                                      Require perfect pair agreement for genotype
-                                      calling (default: True).                  If
-                                      set to False, the forward sequence will be
-                                      used in case of disagreement.
-      -u1, --umi_size_fwd INTEGER     Number of nucleotides at the beginning of
-                                      the fwd read that will be used as the UMI
-                                      (default: 10)
-      -u2, --umi_size_rev INTEGER     Number of nucleotides at the beginning of
-                                      the rev read that will be used as the UMI
-                                      (default: 0)
-      -q, --quality_threshold INTEGER
-                                      Threshold value used to filter out reads of
-                                      poor average quality (default: 30)
-      -i, --ignore_pos LIST           List of positions that are ignored in the
-                                      genotype (default: [])
-      --match FLOAT                   match parameter of the aligner
-      --mismatch FLOAT                mismatch parameter of the aligner
-      --gap_open FLOAT                gap_open parameter of the aligner
-      --gap_extend FLOAT              gap_extend parameter of the aligner
-      -r, --reads_per_umi_thr INTEGER
-                                      Minimum number of reads required to take a
-                                      UMI into account (default: 0).
-                                      Using a number >2 enables to perform error
-                                      correction for UMIs with multiple reads
-      -s, --save_umi_data TEXT        Path to a csv file to save the details of
-                                      the genotypes reads for each UMI. If None
-                                      the data isn't saved (default: None)
-      -n INTEGER                      Number of reads to use. If None all the
-                                      reads are used (default: None)
-      -o, --output TEXT               Output file path
-      --help                          Show this message and exit.
-
-### In python
-
-The package can also be used directly in Python for more flexibility.
-
-#### Calling genotypes
-
-Load a FASTQ file and a reference sequence, then call genotypes with UMI deduplication. The `ignore_pos` parameter excludes positions at the edges of the amplicon where sequencing quality is low.
+**Before the experiment** — score a candidate TR, from 0 (poor) to 1 (good):
 
 ``` python
 import dgrec
+
+dgrec.score('AAATGATCGCCAAATCTGAACAGGAAATTGGCAAAGCAACCGCTAAATACTTTTTCTACTCAAACATTAT')
 ```
 
-The package bundles a small example dataset so that everything below can be run as written. `dgrec.get_example_data_dir()` returns its path; it contains `sacB_example.fastq.gz` and `sacB_ref.fasta` used here, a paired-end example, and the trained models.
+    0.84
 
-``` python
-#The package ships with a small example dataset; this is where it lives
-data_path = dgrec.get_example_data_dir()
+A sequence that scores poorly can usually be rescued by recoding it with synonymous
+substitutions, which leaves the encoded protein untouched — see
+[How to use](https://dbikard.github.io/dgrec/how_to.html#before-the-experiment-designing-a-tr).
+
+**After the experiment** — call genotypes from the amplicon reads, deduplicated by UMI:
+
+``` sh
+dgrec genotypes reads.fastq.gz reference.fasta -o genotypes.csv
 ```
 
+or, in Python, with the mutation profile plotted:
+
 ``` python
-from Bio import SeqIO
 import os
+from Bio import SeqIO
 
-#Getting the path to the fastq file
-fastq_file="sacB_example.fastq.gz"
-fastq_path=os.path.join(data_path,fastq_file)
+data_path = dgrec.get_example_data_dir()   #the example dataset that ships with the package
+ref_seq = str(next(SeqIO.parse(os.path.join(data_path, 'sacB_ref.fasta'), 'fasta')).seq)
 
-#Getting the reference sequence for the amplicon
-read_ref_file="sacB_ref.fasta"
-ref=next(SeqIO.parse(os.path.join(data_path,read_ref_file),"fasta"))
-ref_seq=str(ref.seq)
+gen_list = dgrec.get_genotypes(os.path.join(data_path, 'sacB_example.fastq.gz'), ref_seq,
+                               ignore_pos=[0, 1, 2, 138, 139, 140, 141])
 
-#Generating a list of genotypes sorted by the number of UMIs that are read for each genotype
-gen_list = dgrec.get_genotypes(fastq_path, ref_seq, ignore_pos=[0,1,2,138,139,140,141])
-
-#Printing the top results
-for g in gen_list[:20]:
-    print(f"{g[1]}\t{g[0]}")
+fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name='sacB', TR_range=[50, 119])
 ```
 
     n reads:    1000
@@ -176,92 +90,15 @@ for g in gen_list[:20]:
     Number of UMIs: 814
     Median number of reads per UMI: 1.0
     Number of genotypes: 123
-    675 
-    3   C56A
-    3   A76G
-    3   A91G
-    3   A91T
-    2   C69T
-    2   T122A
-    2   A91C
-    2   A105G
-    2   C116A
-    2   T60A
-    2   T59A
-    2   A68G
-    2   T134A
-    1   A61G,-63T,A76T,A91T
-    1   A79T,A91G
-    1   A61G,A72G,A76G,A79T
-    1   T108A,G127T,G132T
-    1   A48T,A86G
-    1   A61T,A68T,A72G,A79C,A91G
 
-Each genotype is represented as a comma-separated list of mutations in the format `[RefBase][Position][AltBase]`. The list is sorted by the number of UMI-deduplicated molecules supporting each genotype. The first entry is typically the wild-type (unmutated) sequence.
+<img src="index_files/figure-commonmark/cell-3-output-2.png" width="1617" height="449" />
 
-#### Visualizing mutations
+The shaded region is the TR range, where DGRec mutagenesis is active. Note the enrichment of
+mutations at adenine positions within it — the hallmark DGRec signature.
 
-Plot mutation counts at each position. The shaded region indicates the TR (Template Repeat) range where DGRec mutagenesis is active. Note the strong enrichment of mutations at adenine positions within the TR — the hallmark DGRec signature (in this example the TR was designed to have an identical sequence to the VR).
-
-``` python
-fig = dgrec.plot_mutations(gen_list, ref_seq, sample_name="sacB", TR_range=[50,119])
-```
-
-<img src="index_files/figure-commonmark/cell-7-output-1.png" width="1617" height="449" />
-
-### Designing TR sequences
-
-Not every sequence works as a TR: whether the reverse transcriptase can read the dgrRNA depends on how that RNA folds. [`score`](https://dbikard.github.io/dgrec/API/predictions.html#score) predicts, from the folding energy, whether a candidate TR will be mutagenized, on a scale from 0 (poor) to 1 (good).
-
-``` python
-TR_bad  = 'TTAGCGAATGGCGAAATTCGTAAACGCCCTCTGATCGAAACCAACGGCGAAACGGGTGAGATCGTGTGGG'
-TR_good = 'AAATGATCGCCAAATCTGAACAGGAAATTGGCAAAGCAACCGCTAAATACTTTTTCTACTCAAACATTAT'
-
-print('bad TR  score =', dgrec.score(TR_bad))
-print('good TR score =', dgrec.score(TR_good))
-```
-
-    bad TR  score = 0.23
-    good TR score = 0.84
-
-A TR that scores poorly can often be rescued without changing the protein it encodes: [`optimize_sequence`](https://dbikard.github.io/dgrec/API/predictions.html#optimize_sequence) searches synonymous codon substitutions for a variant that folds better. It returns one row per candidate, ranked, each with the recoded sequence and its two scores.
-
-``` python
-import pandas as pd
-from dgrec.predictions import optimize_sequence
-
-variants = optimize_sequence(TR_bad, N=5, CHANGES=6)
-pd.DataFrame(variants)[['New_Variant', 'Score_TRSp', 'Score_TRSpAvd']]
-```
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-&#10;    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-&#10;    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-
-|  | New_Variant | Score_TRSp | Score_TRSpAvd |
-|----|----|----|----|
-| 0 | TTAGCGAACGGCGAAATCCGTAAACGCCCTCTGATCGAAACCAACG... | 0.74 | 0.79 |
-| 1 | TTAGCGAATGGCGAAATCCGTAAACGCCCTCTGATCGAAACCAACG... | 0.66 | 0.81 |
-| 2 | TTAGCGAATGGTGAAATCCGTAAACGCCCTCTGATCGAAACCAACG... | 0.64 | 0.82 |
-| 3 | TTAGCGAACGGTGAAATTCGTAAACGCCCTCTGATCGAAACCAACG... | 0.62 | 0.81 |
-| 4 | TTAGCGAATGGCGAAATCCGTAAACGCCCTCTGATCGAAACCAATG... | 0.58 | 0.78 |
-
-</div>
-
-Each row is a recoded variant that encodes the same protein as `TR_bad`, with the predicted scores for the two folding features. The best one here lifts a TR that scored 0.23 into the range of a usable template.
-
-[`optimize_sequence`](https://dbikard.github.io/dgrec/API/predictions.html#optimize_sequence) also accepts constraints on which amino acids each position is allowed to reach under mutagenesis, so diversification can be directed at chosen residues — see the [predictions API](API/predictions.html).
-
-To predict *which* variants a given TR will produce, rather than how efficiently it will be mutagenized, use the LSTM model in [`dgrec.lstm`](API/lstm.html) ([`generate_sequences_oneTR`](https://dbikard.github.io/dgrec/API/lstm.html#generate_sequences_onetr)). It requires the `lstm` extra.
+**[Read the full walkthrough →](https://dbikard.github.io/dgrec/how_to.html)** for paired-end reads, the command-line options,
+TR recoding, and the LSTM model of the mutational profile. Every function is documented in the
+[API reference](https://dbikard.github.io/dgrec/API/genotypes.html).
 
 ## Citation
 
