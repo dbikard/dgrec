@@ -439,6 +439,7 @@ from . import predictions
 
 def optimize_sequence_display_proteins(original_seq: str,
     frame_offset: int = 0,
+    diversify = None,
     dict_allowed_AAs = None,
     dict_allowed_AAs_max_min = None,
     CHANGES: int = 6,
@@ -517,17 +518,20 @@ def optimize_sequence_display_proteins(original_seq: str,
     result["New_Variant"]
     ```
     """
+    #keyword arguments on purpose: this call used to be positional, which silently
+    #shifted every argument the first time a parameter was added to optimize_sequence
     record=predictions.optimize_sequence(
     original_seq,
-    frame_offset,
-    dict_allowed_AAs,
-    dict_allowed_AAs_max_min,
-    CHANGES,
-    freq_min,
-    N,
-    forbidden_positions,
-    threshold,
-    codon_usage
+    frame_offset=frame_offset,
+    diversify=diversify,
+    dict_allowed_AAs=dict_allowed_AAs,
+    dict_allowed_AAs_max_min=dict_allowed_AAs_max_min,
+    CHANGES=CHANGES,
+    freq_min=freq_min,
+    N=N,
+    forbidden_positions=forbidden_positions,
+    threshold=threshold,
+    codon_usage=codon_usage
 )
     for i in range(len(record)):
         Prot=EvaluateTR_to_prot(record[i]["New_Variant"],NDGR=NDGR,offset=frame_offset)

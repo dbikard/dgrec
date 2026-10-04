@@ -106,7 +106,7 @@ TR_name_list:list, #A list of strings of TRs names
     })
     return score_df
 
-# %% ../nbs/API/05_predictions.ipynb #9cb55b76
+# %% ../nbs/API/05_predictions.ipynb #6c8693b9
 #Deprecated aliases, kept so that code written against the old names keeps working.
 def score(*args, **kwargs):
     "Deprecated alias for `tr_score`."
@@ -403,10 +403,39 @@ def _check_any_AAC_position(dict_allowed,dict_allowed_max_min,length):
                 forbidden_to_add.append(i)
         return(forbidden_to_add)
 
+# %% ../nbs/API/05_predictions.ipynb #d70b4bcb
+def _split_diversify(diversify):
+    """Split a `diversify` dict into the (allowed amino acids, max/min) pair used internally.
+
+    Accepted values per codon position:
+    - `'max'` / `'min'`            : tie-break only, no constraint on which amino acids are reached
+    - `['Y','F']`                  : the codon must be able to reach all of these
+    - `('min', ['K','R'])`         : both - must reach these, and among the codons that can,
+                                     take the one reaching the fewest (or most) others
+    """
+    allowed, max_min = {}, {}
+    for pos, spec in (diversify or {}).items():
+        mode, aas = None, None
+        if isinstance(spec, str) and spec in ('max', 'min'):
+            mode = spec
+        elif (isinstance(spec, tuple) and len(spec) == 2
+              and isinstance(spec[0], str) and spec[0] in ('max', 'min')):
+            mode, aas = spec[0], spec[1]
+            if isinstance(aas, str): aas = [aas]
+        elif isinstance(spec, (list, tuple, set)):
+            aas = list(spec)
+        else:
+            raise ValueError(f"diversify[{pos!r}]={spec!r}: expected 'max'/'min', a list of amino "
+                             f"acids, or a ('max'|'min', [amino acids]) pair")
+        if aas is not None: allowed[pos] = list(aas)
+        if mode is not None: max_min[pos] = mode
+    return allowed, max_min
+
 # %% ../nbs/API/05_predictions.ipynb #7c1cc23f-b21b-41a2-b03f-627eec8b5428
 def optimize_sequence(
     original_seq,
     frame_offset= 0,
+    diversify = None,
     dict_allowed_AAs = None,
     dict_allowed_AAs_max_min=None,
     CHANGES = 6,
@@ -432,10 +461,20 @@ def optimize_sequence(
         Original DNA sequence to optimize.
     frame_offset : int, default=0
         Reading-frame offset (0, 1, or 2) used when grouping codons.
+    diversify : dict, default=None
+        What to do at chosen codon positions, keyed by codon index:
+        `'max'` or `'min'` alone tunes how many amino acids that position can
+        reach, without constraining which (asking for `'max'` with no list puts
+        an `AAC` there and locks it); a list of amino acids requires the codon to
+        be able to reach all of them; a `('min', ['K','R'])` pair does both -
+        reach these, and among the codons that can, take the one that brings
+        along the fewest (or most) others.
     dict_allowed_AAs : dict, default=None
+        Deprecated, use `diversify`.
         Dictionary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
         Selects for codons which do not reach (by adenine mutation) stop codons. If not possible, allow them anyway.
     dict_allowed_AAs_max_min : dict, default=None
+        Deprecated, use `diversify`.
         Dictionary of positions (keys) and either you want maximum diversity ('max') or mimimum diversity ('min')  at the positions mentionned in dict_allowed_AAs. Diversity = number of AAs reachable by adenine mutations (already removed codons reaching stop codons). 
         If not mentioned, any sequence that fullfills dict_allowed_AAs[i] is accepted.
         If there is no list of accessible AAs for dict_allowed_AAs[i] but dict_allowed_AAs_min_max[i]=='max', it puts an AAC here and forbids the algorithm to change it.
@@ -489,6 +528,15 @@ def optimize_sequence(
     ```
     """
     if forbidden_positions is None: forbidden_positions = []
+    if diversify is not None:
+        if dict_allowed_AAs is not None or dict_allowed_AAs_max_min is not None:
+            raise ValueError("pass either diversify= or the deprecated dict_allowed_AAs/"
+                             "dict_allowed_AAs_max_min, not both")
+        dict_allowed_AAs, dict_allowed_AAs_max_min = _split_diversify(diversify)
+    elif dict_allowed_AAs is not None or dict_allowed_AAs_max_min is not None:
+        warnings.warn("dict_allowed_AAs and dict_allowed_AAs_max_min are deprecated; "
+                      "use diversify={pos: 'max'|[AAs]|('max'|'min',[AAs])}.",
+                      DeprecationWarning, stacklevel=2)
     codon_changes_done = 0
     if dict_allowed_AAs_max_min==None:
         beam = [original_seq]
