@@ -6,9 +6,9 @@ Docs: https://dbikard.github.io/dgrec/API/lstm.html.md"""
 
 # %% auto #0
 __all__ = ['EPS', 'one_hot_encode', 'one_hot_decode', 'separate_model', 'generate_sequence_from_onehot', 'sequences_same_length',
-           'pad_sequence', 'to_tensor_inputs', 'generate_sequences', 'generate_sequences_oneTR', 'EvaluateTR_to_prot',
-           'optimize_sequence_display_proteins', 'compute_likelihood', 'compute_likelihood_batch',
-           'compute_likelihood_list', 'compute_likelihood_matrix']
+           'pad_sequence', 'to_tensor_inputs', 'generate_sequences', 'generate_sequences_oneTR',
+           'predict_protein_diversity', 'optimize_sequence_display_proteins', 'EvaluateTR_to_prot',
+           'compute_likelihood', 'compute_likelihood_batch', 'compute_likelihood_list', 'compute_likelihood_matrix']
 
 # %% ../nbs/API/09_lstm.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import logomaker
@@ -372,16 +372,17 @@ def generate_sequences_oneTR(TR: str #TR sequence
     return generate_sequences([TR] * n)
 
 # %% ../nbs/API/09_lstm.ipynb #493ad454-95a7-4eff-bd9c-ae857afa003e
-def EvaluateTR_to_prot(
+def predict_protein_diversity(
     TR: str #The TR sequence 
-    ,NDGR: int = 100 #Number of VR to generate for the protein logo
+    ,NDGR: int = 100 #Number of VR to generate
     ,offset: int = 0 #The offset for protein translation
+    ,plot: bool = False #draw the amino-acid sequence logo
 ) -> Counter:
     """
     Evaluate protein diversity accessible from a TR sequence via DGR.
 
     Generates VR sequences from a single TR, translates them into proteins,
-    and displays a protein sequence logo based on amino-acid frequencies.
+    and returns the amino-acid frequencies; pass `plot=True` for a sequence logo.
 
     Parameters
     ----------
@@ -418,125 +419,51 @@ def EvaluateTR_to_prot(
     # Normalize counts to probabilities per position
     df = df.div(df.sum(axis=1), axis=0)
 
-    plt.figure(figsize=(12, 4))
-    logomaker.Logo(
-        df,
-        color_scheme="chemistry",
-        shade_below=0.5,
-        fade_below=0.5
-    )
-    plt.title("Protein Sequence Logo")
-    plt.ylabel("Frequency")
-    plt.xlabel("Amino acid position")
-    plt.tight_layout()
-    plt.show()
+    if plot:
+        plt.figure(figsize=(12, 4))
+        logomaker.Logo(
+            df,
+            color_scheme="chemistry",
+            shade_below=0.5,
+            fade_below=0.5
+        )
+        plt.title("Protein Sequence Logo")
+        plt.ylabel("Frequency")
+        plt.xlabel("Amino acid position")
+        plt.tight_layout()
+        plt.show()
 
     return Counter(proteins)
 
 
 # %% ../nbs/API/09_lstm.ipynb #42378de4-e643-4097-86b8-3a709638923a
+import warnings
 from . import predictions
 
-def optimize_sequence_display_proteins(original_seq: str,
-    frame_offset: int = 0,
-    diversify = None,
-    dict_allowed_AAs = None,
-    dict_allowed_AAs_max_min = None,
-    CHANGES: int = 6,
-    freq_min: float = 0.2,
-    N: int = 1,
-    forbidden_positions: list[int] = None,
-    threshold: float = 0.7,
-    codon_usage: dict = codon_usage_ecoli,
-    NDGR: int = 100
-):
-    """
-    Optimize a DNA sequence via synonymous codon substitutions and shows the sequence logo for each of the optimal sequences.
+def optimize_sequence_display_proteins(original_seq, *args, NDGR: int = 100, **kwargs):
+    """Deprecated. Run the search and annotate its result instead:
 
-    This function performs a beam-search–based optimization of a nucleotide
-    sequence by iteratively proposing single-codon synonymous changes and
-    evaluating them with the two scoring functions. The search stops early if a
-    variant meets the specified score thresholds, otherwise the best Pareto-
-    optimal solution is returned.
-
-    Parameters
-    ----------
-    original_seq : str
-        Original DNA sequence to optimize.
-    frame_offset : int, default=0
-        Reading-frame offset (0, 1, or 2) used when grouping codons.
-    dict_allowed_AAs : dict, defaultdict(list)
-        Dictionary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
-        Selects for codons which do not reach (by adenine mutation) stop codons. If not possible, allow them anyway.
-    dict_allowed_AAs_max_min : dict, default=None
-        Dictionary of positions (keys) and either you want maximum diversity ('max') or mimimum diversity ('min')  at the positions mentionned in dict_allowed_AAs. Diversity = number of AAs reachable by adenine mutations (already removed codons reaching stop codons). 
-        If not mentioned, any sequence that fullfills dict_allowed_AAs[i] is accepted.
-    CHANGES : int, default=6
-        Maximum number of codon substitutions allowed (on top of the AAs requirements from the previous argument).
-    freq_min : float, default=0.2
-        Lowest usage frequency acceptable.
-    N : int, default=1
-        Number of putative TR to output.
-    forbidden_positions : list[int], optional
-        Nucleotide positions that must not be modified.
-    threshold : float, default=0.7
-        Minimum required value for both `Score_TRSp` and `Score_TRSpAvd` to
-        accept a sequence as optimal.
-    codon_usage : dict, optional
-        Codon usage table of E. Coli mapping amino acids to codons and frequencies.
-    NDGR : int, default=100
-        Number of sequences to generate via the LSTM for sequence logo estimation. 
-    Returns
-    -------
-    dict
-        Dictionary containing:
-        - `Original_Sequence` : str  
-          Input DNA sequence.
-        - `New_Variant` : str  
-          Optimized DNA sequence.
-        - `Rank` : int or None  
-          rank of the sequence (by score).
-        - `Score` : float or None  
-          score of the selected variant (geometrical mean).
-        - `Score_TRSp` : float or None  
-          TR+Sp score of the selected variant.
-        - `Score_TRSpAvd` : float or None  
-          Avd+TR+Sp score of the selected variant.
-        - `Proteins` : Counter
-          The proteins that are generated by the DGR.  
-    Notes
-    -----
-    - The algorithm keeps only Pareto-optimal candidates at each iteration.
-    - If no variant satisfies the threshold criteria, the best-scoring
-      sequence after `CHANGES` iterations is returned.
-    - Internal scoring and plotting are handled by `_evaluate_sequences`.
-
-    Examples
-    --------
     ```python
-    variants = optimize_sequence_display_proteins(TR_seq, N=5)
-    result["New_Variant"]
+    variants = dgrec.optimize_sequence(TR_seq, N=5)
+    for v in variants:
+        v['Proteins'] = predict_protein_diversity(v['New_Variant'], plot=True)
     ```
     """
-    #keyword arguments on purpose: this call used to be positional, which silently
-    #shifted every argument the first time a parameter was added to optimize_sequence
-    record=predictions.optimize_sequence(
-    original_seq,
-    frame_offset=frame_offset,
-    diversify=diversify,
-    dict_allowed_AAs=dict_allowed_AAs,
-    dict_allowed_AAs_max_min=dict_allowed_AAs_max_min,
-    CHANGES=CHANGES,
-    freq_min=freq_min,
-    N=N,
-    forbidden_positions=forbidden_positions,
-    threshold=threshold,
-    codon_usage=codon_usage
-)
-    for i in range(len(record)):
-        Prot=EvaluateTR_to_prot(record[i]["New_Variant"],NDGR=NDGR,offset=frame_offset)
-        record[i]['Proteins']=Prot
+    warnings.warn("optimize_sequence_display_proteins() is deprecated; call optimize_sequence() "
+                  "and then predict_protein_diversity() on each New_Variant.",
+                  DeprecationWarning, stacklevel=2)
+    record = predictions.optimize_sequence(original_seq, *args, **kwargs)
+    offset = kwargs.get("frame_offset", args[0] if args else 0)
+    for v in record:
+        v['Proteins'] = predict_protein_diversity(v["New_Variant"], NDGR=NDGR, offset=offset, plot=True)
     return record
+
+def EvaluateTR_to_prot(*args, **kwargs):
+    "Deprecated alias for `predict_protein_diversity` (which no longer plots unless asked)."
+    warnings.warn("EvaluateTR_to_prot() is deprecated; use predict_protein_diversity().",
+                  DeprecationWarning, stacklevel=2)
+    kwargs.setdefault("plot", True)
+    return predict_protein_diversity(*args, **kwargs)
 
 # %% ../nbs/API/09_lstm.ipynb #265d2712-2bfa-482d-8c19-420b904a0350
 def compute_likelihood(TR, VR):

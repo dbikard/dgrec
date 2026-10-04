@@ -232,7 +232,7 @@ def parse_genotypes(genotypes_file):
             gen_list.append((row[0],int(row[1])))
     return gen_list
 
-# %% ../nbs/API/07_utils.ipynb #2f2f68b5
+# %% ../nbs/API/07_utils.ipynb #baaf079c
 def _genotype_pairs(gen_list):
     """Accept either form of a genotype list.
 
