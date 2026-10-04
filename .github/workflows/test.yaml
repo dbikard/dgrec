@@ -27,7 +27,9 @@ jobs:
           python -m pip install -e .
       - name: Check TensorFlow is actually present
         run: python -c "import tensorflow, dgrec.lstm; print(tensorflow.__version__)"
-      - name: Run the LSTM notebook tests
+      - name: Run the notebooks that need TensorFlow
         # the console scripts are dash-named in this nbdev; `nbdev_test` does not exist.
         # positional path, because --path is ambiguous with --path-glob / --path-re
-        run: nbdev-test nbs/API/09_lstm.ipynb
+        run: |
+          nbdev-test nbs/API/09_lstm.ipynb
+          nbdev-test nbs/API/10_library_size.ipynb

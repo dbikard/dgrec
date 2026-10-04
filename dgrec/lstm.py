@@ -8,7 +8,7 @@ Docs: https://dbikard.github.io/dgrec/API/lstm.html.md"""
 __all__ = ['EPS', 'one_hot_encode', 'one_hot_decode', 'separate_model', 'generate_sequence_from_onehot', 'sequences_same_length',
            'pad_sequence', 'to_tensor_inputs', 'generate_sequences', 'generate_sequences_oneTR',
            'predict_protein_diversity', 'compute_likelihood', 'compute_likelihood_batch', 'compute_likelihood_list',
-           'compute_likelihood_matrix', 'estimate_library_size_lstm']
+           'compute_likelihood_matrix']
 
 # %% ../nbs/API/09_lstm.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import logomaker
@@ -588,60 +588,3 @@ def compute_likelihood_matrix(TR_list, VR_list, batch_size=64):
         lls = _teacher_forced_loglik([tr] * len(cols), [VR_list[j] for j in cols])
         for j, ll in zip(cols, lls): matrix[i][j] = float(ll)
     return matrix
-
-# %% ../nbs/API/09_lstm.ipynb #f13c8b9a
-def estimate_library_size_lstm(
-    TR: str,                  # the template region the library was built from
-    n: int,                   # number of mutagenized molecules to extrapolate to
-    n_samples: int = 10000,   # Monte Carlo sample drawn from the model
-    batch_size: int = 4000,   # scoring batch size
-    seed: int = None,         # seed for reproducibility
-) -> dict:
-    """Expected number of distinct genotypes among `n` mutagenized molecules.
-
-    `dgrec.library_size.estimate_library_size` answers the same question from the
-    observed counts alone, by fitting a power law to the tail of the rank-abundance
-    curve and extrapolating it. It needs that assumed shape because the empirical
-    estimate of a genotype's probability is zero for every genotype that was never
-    observed, so something has to stand in for the unobserved tail.
-
-    The LSTM does not need a stand-in: it assigns a probability to any VR, observed or
-    not. So the exact expression
-
-        U(n) = sum_j ( 1 - (1 - p_j)^n )
-
-    can be estimated with no assumption about the shape of the distribution, by sampling
-    genotypes from the model and reweighting each by its own probability,
-
-        U(n) = E_{j ~ p} [ ( 1 - (1 - p_j)^n ) / p_j ],
-
-    which needs only the ability to sample and to score - both of which the model provides.
-
-    `n` counts **mutagenized molecules, not cells**: the model describes the mutational
-    profile given that conversion happened, not the rate of conversion. Multiply the
-    number of cells by the fraction that carry a mutation before passing it here.
-
-    Returns the estimate, its Monte Carlo standard error, and two measures of the
-    distribution's concentration that do not depend on `n`: the Simpson and Shannon
-    effective numbers of genotypes (Hill numbers of order 2 and 1).
-    """
-    _require_tensorflow()
-    if seed is not None: np.random.seed(seed)
-
-    vrs = generate_sequences_oneTR(TR, n_samples)
-    logp = np.concatenate([
-        _teacher_forced_loglik([TR] * len(vrs[i:i+batch_size]), vrs[i:i+batch_size])
-        for i in range(0, len(vrs), batch_size)
-    ])
-    p = np.exp(logp)
-
-    # (1-(1-p)^n)/p, computed so that it stays accurate for very small p
-    weights = -np.expm1(n * np.log1p(-p)) / p
-    return {
-        'library_size': float(weights.mean()),
-        'se': float(weights.std(ddof=1) / np.sqrt(len(weights))),
-        'n': int(n),
-        'n_samples': int(n_samples),
-        'simpson_effective': float(1.0 / p.mean()),
-        'shannon_effective': float(np.exp((-logp).mean())),
-    }
