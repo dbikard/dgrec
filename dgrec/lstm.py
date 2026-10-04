@@ -589,7 +589,7 @@ def compute_likelihood_matrix(TR_list, VR_list, batch_size=64):
         for j, ll in zip(cols, lls): matrix[i][j] = float(ll)
     return matrix
 
-# %% ../nbs/API/09_lstm.ipynb #3dba4d5e
+# %% ../nbs/API/09_lstm.ipynb #f13c8b9a
 def estimate_library_size_lstm(
     TR: str,                  # the template region the library was built from
     n: int,                   # number of mutagenized molecules to extrapolate to
