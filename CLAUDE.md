@@ -30,6 +30,16 @@ protein it encodes, and apply the same changes to the TR and the VR so the two s
 Wording in the docs that says the TR "encodes a protein" is wrong; see the manuscript
 (`ms/main.tex`, the recoding section and the paragraph on TR-VR homology).
 
+**Stop codons in the TR are allowed, and may be deliberate.** A `TAA` in the TR does not stop
+anything: the TR is not translated. It becomes a stop only if that codon reaches the VR
+unmutated, and such a molecule is simply a dead variant that selection removes - while every
+molecule that *was* mutated there carries a diversified, functional residue. So a stop codon in
+the TR acts as a requirement that the position be diversified. `_valid_seq_reach_AAs` therefore
+does **not** filter `codons_stop` out of its candidates, and it should not be "fixed" to do so.
+(The separate `codons_reaching_stop` filter in `_propose_single_codon_changes` is a different
+thing, and is wanted: it avoids starting from a functional codon that mutagenesis could turn
+into a stop - the lysine case discussed in the paper.)
+
 **Why adenine bias matters for the code**:
 - `is_dgrec()` validates the adenine bias signature (≥70% A mutations)
 - `optimize_sequence()` chooses codons to control which positions have adenines (and thus get diversified)
