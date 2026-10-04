@@ -42,7 +42,7 @@ into a stop - the lysine case discussed in the paper.)
 
 **Why adenine bias matters for the code**:
 - `is_dgrec()` validates the adenine bias signature (≥70% A mutations)
-- `optimize_sequence()` chooses codons to control which positions have adenines (and thus get diversified)
+- `optimize_sequence(..., diversify={codon: 'max'|[AAs]|('max'|'min',[AAs])})` chooses codons to control which positions have adenines (and thus get diversified)
 - `codons_reaching_stop` lists codons where A-mutagenesis can produce stop codons
 
 **Sequence context effects**: The +1 base affects mutation rate (G decreases, C increases) and substitution bias. This creates position-dependent, context-dependent error patterns — explaining why the LSTM model captures sequential dependencies (the "snowball effect": a prior mutation at +1 increases error rate at the current position).
@@ -131,12 +131,13 @@ FASTQ input → Alignment → UMI Grouping → Genotype Calling → Filtering �
 
 - `get_genotypes()` - Main single-end genotype calling
 - `get_genotypes_paired()` - Paired-end genotype calling
-- `score()` / `score_list()` - Predicts TR quality based on RNA folding energy (ΔE feature)
-- `DGR_percentage()` - Predicts % of molecules that will be mutagenized
+- `tr_score()` / `tr_score_list()` - Predicts TR quality based on RNA folding energy (ΔE feature), 0-1
+- `tr_mutagenesis_percentage()` - Predicts % of molecules that will be mutagenized
 - `optimize_sequence()` - Finds synonymous codon substitutions that improve TR folding while preserving protein and controlling which amino acids can be reached by mutagenesis
 - `plot_mutations()` - Visualization of per-position mutation profiles
 - `is_dgrec()` - Validates the adenine bias signature (≥70% A mutations, ≥2 mutations)
 - `generate_sequences_oneTR()` - Simulates VR diversity from a TR design using trained LSTM
+- `predict_protein_diversity()` - Amino-acid frequencies reachable from a TR, via the LSTM (`lstm` extra)
 
 ### Genotype Format
 

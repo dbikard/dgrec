@@ -444,15 +444,6 @@ def optimize_sequence(
         be able to reach all of them; a `('min', ['K','R'])` pair does both -
         reach these, and among the codons that can, take the one that brings
         along the fewest (or most) others.
-    dict_allowed_AAs : dict, default=None
-        Deprecated, use `diversify`.
-        Dictionary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
-        Selects for codons which do not reach (by adenine mutation) stop codons. If not possible, allow them anyway.
-    dict_allowed_AAs_max_min : dict, default=None
-        Deprecated, use `diversify`.
-        Dictionary of positions (keys) and either you want maximum diversity ('max') or mimimum diversity ('min')  at the positions mentionned in dict_allowed_AAs. Diversity = number of AAs reachable by adenine mutations (already removed codons reaching stop codons). 
-        If not mentioned, any sequence that fullfills dict_allowed_AAs[i] is accepted.
-        If there is no list of accessible AAs for dict_allowed_AAs[i] but dict_allowed_AAs_min_max[i]=='max', it puts an AAC here and forbids the algorithm to change it.
     CHANGES : int, default=6
         Maximum number of codon substitutions allowed (on top of the AAs requirements from the previous argument).
     freq_min : float, default=0.2
