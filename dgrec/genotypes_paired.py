@@ -14,6 +14,7 @@ import gzip as gz
 import os
 from collections import defaultdict, Counter
 import numpy as np
+import pandas as pd
 import itertools
 import click
 import csv
@@ -33,7 +34,8 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
                             umi_size_fwd: int = 10, #number of nucleotides at the beginning of the fwd read that will be used as the UMI
                             umi_size_rev: int = 0, #number of nucleotides at the beginning of the rev read that will be used as the UMI (if both are provided the umi will be the concatenation of both)
                             quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality. Both reads have to pass the threshold.
-                            ignore_pos: list = [], #list of positions that are ignored in the genotype
+                            ignore_pos: list = None, #list of positions that are ignored in the genotype
+                            verbose: bool = True, #print a summary of the read and UMI counts
                             max_mutations: int = 15, #read pairs with more mutations than this are discarded as bad data. Raise it when genotypes are expected to differ strongly from the reference, e.g. a VR replaced by a TR-derived copy.
                             base_quality_threshold: int = 0, #if >0, bases below this Phred score are masked and never called as mutations. 0 keeps the previous behaviour of filtering on mean read quality only.
                             N = None, #number of reads to consider (useful to get a quick view of the data without going through the whole fastq files). If None the whole data will be used.
@@ -44,8 +46,8 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
 
     align_param={"match":2,
                 "mismatch":-1, 
-                "gap_open":-1, 
-                "gap_extend":-.5,
+                "gap_open":-6, 
+                "gap_extend":-1,
                 "ungapped_max":8,
                 }
     
@@ -148,7 +150,7 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
         UMI_gencounter[umi]=Counter(UMI_dict[umi])
 
     log+=f"Median number of reads per UMI: {np.median(umi_readcounts)}"
-    print(log)
+    if verbose: print(log)
     return UMI_gencounter
 
 # %% ../nbs/API/01_genotypes_paired.ipynb #d18a08db
@@ -163,7 +165,9 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                         umi_size_fwd: int = 10, #number of nucleotides at the beginning of the fwd read that will be used as the UMI
                         umi_size_rev: int = 0, #number of nucleotides at the beginning of the rev read that will be used as the UMI (if both are provided the umi will be the concatenation of both)
                         quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
-                        ignore_pos: list = [], #list of positions that are ignored in the genotype
+                        ignore_pos: list = None, #list of positions that are ignored in the genotype
+                        verbose: bool = True, #print a summary of read, UMI and genotype counts
+                        as_dataframe: bool = False, #return a DataFrame with genotype/count columns instead of (genotype, count) tuples
                         max_mutations: int = 15, #read pairs with more mutations than this are discarded as bad data
                         base_quality_threshold: int = 0, #if >0, bases below this Phred score are masked and never called as mutations
                         reads_per_umi_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
@@ -185,6 +189,7 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
                                          umi_size_rev=umi_size_rev,
                                          quality_threshold=quality_threshold,
                                          ignore_pos=ignore_pos,
+                                         verbose=verbose,
                                          max_mutations=max_mutations,
                                          base_quality_threshold=base_quality_threshold,
                                          N=N,
@@ -198,5 +203,7 @@ def get_genotypes_paired(fastq_path_fwd: str, #path to the input fastq file read
 
     UMI_gen_dict=correct_UMI_genotypes(UMI_dict, reads_per_umi_thr)
     gen_list = genotype_UMI_counter(UMI_gen_dict)
-    print("Number of genotypes:", len(gen_list))
+    if verbose: print("Number of genotypes:", len(gen_list))
+    if as_dataframe:
+        return pd.DataFrame(gen_list, columns=["genotype","count"])
     return gen_list

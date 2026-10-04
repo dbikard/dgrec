@@ -30,9 +30,19 @@ protein it encodes, and apply the same changes to the TR and the VR so the two s
 Wording in the docs that says the TR "encodes a protein" is wrong; see the manuscript
 (`ms/main.tex`, the recoding section and the paragraph on TR-VR homology).
 
+**Stop codons in the TR are allowed, and may be deliberate.** A `TAA` in the TR does not stop
+anything: the TR is not translated. It becomes a stop only if that codon reaches the VR
+unmutated, and such a molecule is simply a dead variant that selection removes - while every
+molecule that *was* mutated there carries a diversified, functional residue. So a stop codon in
+the TR acts as a requirement that the position be diversified. `_valid_seq_reach_AAs` therefore
+does **not** filter `codons_stop` out of its candidates, and it should not be "fixed" to do so.
+(The separate `codons_reaching_stop` filter in `_propose_single_codon_changes` is a different
+thing, and is wanted: it avoids starting from a functional codon that mutagenesis could turn
+into a stop - the lysine case discussed in the paper.)
+
 **Why adenine bias matters for the code**:
 - `is_dgrec()` validates the adenine bias signature (≥70% A mutations)
-- `optimize_sequence()` chooses codons to control which positions have adenines (and thus get diversified)
+- `optimize_sequence(..., diversify={codon: 'max'|[AAs]|('max'|'min',[AAs])})` chooses codons to control which positions have adenines (and thus get diversified)
 - `codons_reaching_stop` lists codons where A-mutagenesis can produce stop codons
 
 **Sequence context effects**: The +1 base affects mutation rate (G decreases, C increases) and substitution bias. This creates position-dependent, context-dependent error patterns — explaining why the LSTM model captures sequential dependencies (the "snowball effect": a prior mutation at +1 increases error rate at the current position).
@@ -121,12 +131,13 @@ FASTQ input → Alignment → UMI Grouping → Genotype Calling → Filtering �
 
 - `get_genotypes()` - Main single-end genotype calling
 - `get_genotypes_paired()` - Paired-end genotype calling
-- `score()` / `score_list()` - Predicts TR quality based on RNA folding energy (ΔE feature)
-- `DGR_percentage()` - Predicts % of molecules that will be mutagenized
+- `tr_score()` / `tr_score_list()` - Predicts TR quality based on RNA folding energy (ΔE feature), 0-1
+- `tr_mutagenesis_percentage()` - Predicts % of molecules that will be mutagenized
 - `optimize_sequence()` - Finds synonymous codon substitutions that improve TR folding while preserving protein and controlling which amino acids can be reached by mutagenesis
 - `plot_mutations()` - Visualization of per-position mutation profiles
 - `is_dgrec()` - Validates the adenine bias signature (≥70% A mutations, ≥2 mutations)
 - `generate_sequences_oneTR()` - Simulates VR diversity from a TR design using trained LSTM
+- `predict_protein_diversity()` - Amino-acid frequencies reachable from a TR, via the LSTM (`lstm` extra)
 
 ### Genotype Format
 
@@ -143,10 +154,15 @@ range: setuptools overrides the values in `setup.py`/`settings.ini` with it, so 
 - **ViennaRNA** is a runtime dependency: `dgrec/__init__.py` imports `predictions` and
   `encoding`, which import it at module level. Import it as `RNA` — the name provided by both
   the PyPI wheel and the conda package
+- **biopython>=1.86**: the aligner's end-gap scores use the attribute names introduced in 1.86
 - **tensorflow[and-cuda]>=2.17** is the optional `lstm` extra, guarded by `_require_tensorflow()`
-- `dgrec/cpairwise2module.c` builds an optional C extension; `pairwise2.py` falls back to pure Python
-  if it is unavailable. `pairwise2.py` and `cpairwise2module.c` are vendored from Biopython and
-  keep their own licence (`dgrec/LICENSE.biopython`) - do not relicense them
+- Read alignment uses Biopython's `PairwiseAligner` (global; defaults match 2, mismatch -1,
+  gap open -6, gap extend -1 - the former `STRICT_ALIGN_PARAMS`; read overhang free
+  and end deletions favoured on ties, so both land at the read ends where `ignore_pos` masks them). The package is pure
+  Python - no C extension, so one `py3-none-any` wheel serves every platform. 0.2.0 dropped
+  the vendored `pairwise2` and moved the default gap penalties from open -1/extend -0.5 to
+  -6/-1. Both change genotype calls relative to 0.1.x; the aligner change because the two
+  pick different alignments among equal-score ones (indels in repeats)
 - Pre-trained models and example data are bundled in `dgrec/example_data/`
 
 ## Testing in nbdev

@@ -9,7 +9,7 @@ __all__ = ['bases', 'POS_CLASSES', 'OBSERVATIONS', 'TAG', 'DGR_CONSISTENT', 'CON
            'classify_genotype', 'annotate_genotype', 'calibrate_null', 'dgr_pvalue', 'find_dgr_molecules']
 
 # %% ../nbs/API/03_analysis.ipynb #15867adc
-from .utils import parse_genotypes, str_to_mut
+from .utils import parse_genotypes, str_to_mut, _genotype_pairs
 import os
 import numpy as np
 from Bio import SeqIO
@@ -24,7 +24,7 @@ def mut_rate(gen_list:list, #a genotype list with the number of molecules detect
     """Computes the mutation rate per base within the specified range. The rate can be computed for specific bases using the base_restriction argument."""
     mut_pileup=np.zeros(len(ref_seq))
     nTOT = 0
-    for g, n in gen_list:
+    for g, n in _genotype_pairs(gen_list):
         nTOT += n
         gens = str_to_mut(g)
         for m in gens:
@@ -49,7 +49,7 @@ import math
 
 
 # %% ../nbs/API/03_analysis.ipynb #dae9601a
-from .utils import str_to_mut, mut_to_str
+from .utils import str_to_mut, mut_to_str, _genotype_pairs
 
 
 # %% ../nbs/API/03_analysis.ipynb #b2bf61b4
@@ -252,8 +252,8 @@ def calibrate_null(gen_list: list,  #(genotype, count) pairs from get_genotypes
     if not outA or not outN:
         raise ValueError("no flanking A and G/C positions available to calibrate the null")
     perpos = {p: 0 for p in outA + outN}
-    total = sum(n for _, n in gen_list)
-    for g, n in gen_list:
+    total = sum(n for _, n in _genotype_pairs(gen_list))
+    for g, n in _genotype_pairs(gen_list):
         for ref_b, pos, alt in str_to_mut(g):
             if alt == "-" or ref_b == "-": continue
             if pos in perpos: perpos[pos] += n
@@ -310,9 +310,9 @@ def find_dgr_molecules(gen_list: list,  #(genotype, count) pairs from get_genoty
     """
     if p0 is None:
         p0 = calibrate_null(gen_list, aln, covered)[2]
-    m = sum(n for _, n in gen_list)
+    m = sum(n for _, n in _genotype_pairs(gen_list))
     scored = []
-    for g, n in gen_list:
+    for g, n in _genotype_pairs(gen_list):
         info = classify_genotype(g, aln)
         if info["k_TR_A"] + info["k_TR_GC"] < 2: continue
         scored.append((_binom_sf(info["k_TR_A"], info["k_TR_A"] + info["k_TR_GC"], p0),

@@ -36,8 +36,8 @@ def dgrec():
 @click.option('--ignore_pos', '-i', type=list, default=[], multiple=True, help="list of positions that are ignored in the genotype, e.g. [0,1,149,150]")
 @click.option('--match', type=float, default=2., help="match parameter of the aligner")
 @click.option('--mismatch', type=float, default=-1., help="mismatch parameter of the aligner")
-@click.option('--gap_open', type=float, default=-1., help="gap_open parameter of the aligner")
-@click.option('--gap_extend', type=float, default=-.5, help="gap_extend parameter of the aligner")
+@click.option('--gap_open', type=float, default=-6., help="gap_open parameter of the aligner")
+@click.option('--gap_extend', type=float, default=-1., help="gap_extend parameter of the aligner")
 @click.option('--reads_per_umi_thr', '-r', type=int, default=0, help="minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads")
 @click.option('--save_umi_data','-s', default=None, help="path to a csv file to save the details of the genotypes reads for each UMI. If None the data isn't saved.")
 @click.option('--output', '-o', default="genotypes.csv", help="output file path")
@@ -81,8 +81,8 @@ def genotypes(fastq, ref, umi_size, quality_threshold, ignore_pos, match, mismat
               help="List of positions that are ignored in the genotype (default: [])")
 @click.option('--match', type=float, default=2., help="match parameter of the aligner")
 @click.option('--mismatch', type=float, default=-1., help="mismatch parameter of the aligner")
-@click.option('--gap_open', type=float, default=-1., help="gap_open parameter of the aligner")
-@click.option('--gap_extend', type=float, default=-.5, help="gap_extend parameter of the aligner")
+@click.option('--gap_open', type=float, default=-6., help="gap_open parameter of the aligner")
+@click.option('--gap_extend', type=float, default=-1., help="gap_extend parameter of the aligner")
 @click.option('--reads_per_umi_thr', '-r', type=int, default=0,
               help="Minimum number of reads required to take a UMI into account (default: 0).\
                   Using a number >2 enables to perform error correction for UMIs with multiple reads")

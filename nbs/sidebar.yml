@@ -17,5 +17,4 @@ website:
           - API/10_library_size.ipynb
       - section: DGRec data analysis
         contents:
-          - DGRec data analysis/00_mutation_distribution.ipynb
           - DGRec data analysis/01_library_size_estimation.ipynb

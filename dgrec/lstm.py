@@ -6,9 +6,9 @@ Docs: https://dbikard.github.io/dgrec/API/lstm.html.md"""
 
 # %% auto #0
 __all__ = ['EPS', 'one_hot_encode', 'one_hot_decode', 'separate_model', 'generate_sequence_from_onehot', 'sequences_same_length',
-           'pad_sequence', 'to_tensor_inputs', 'generate_sequences', 'generate_sequences_oneTR', 'EvaluateTR_to_prot',
-           'optimize_sequence_display_proteins', 'compute_likelihood', 'compute_likelihood_batch',
-           'compute_likelihood_list', 'compute_likelihood_matrix']
+           'pad_sequence', 'to_tensor_inputs', 'generate_sequences', 'generate_sequences_oneTR',
+           'predict_protein_diversity', 'compute_likelihood', 'compute_likelihood_batch', 'compute_likelihood_list',
+           'compute_likelihood_matrix']
 
 # %% ../nbs/API/09_lstm.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import logomaker
@@ -197,12 +197,12 @@ def _get_models():
     """Load LSTM models on first use."""
     _require_tensorflow()
     if 'firstmodel' not in _models_cache:
-        data_path = get_example_data_dir()
-        model_name = 'LSTM_model_8_16.keras'
-        model_path = os.path.join(data_path, model_name)
+        _data_path = get_example_data_dir()
+        _model_name = 'LSTM_model_8_16.keras'
+        _model_path = os.path.join(_data_path, _model_name)
         # --- Load your full trained model first ---
         model_TR_to_VR = tf.keras.models.load_model(
-            model_path, #"LSTM_model_8_16_tf220.keras"
+            _model_path, #"LSTM_model_8_16_tf220.keras"
             custom_objects={
                 'masked_categorical_crossentropy': masked_categorical_crossentropy,
                 'masked_accuracy': masked_accuracy,
@@ -372,16 +372,17 @@ def generate_sequences_oneTR(TR: str #TR sequence
     return generate_sequences([TR] * n)
 
 # %% ../nbs/API/09_lstm.ipynb #493ad454-95a7-4eff-bd9c-ae857afa003e
-def EvaluateTR_to_prot(
+def predict_protein_diversity(
     TR: str #The TR sequence 
-    ,NDGR: int = 100 #Number of VR to generate for the protein logo
+    ,NDGR: int = 100 #Number of VR to generate
     ,offset: int = 0 #The offset for protein translation
+    ,plot: bool = False #draw the amino-acid sequence logo
 ) -> Counter:
     """
     Evaluate protein diversity accessible from a TR sequence via DGR.
 
     Generates VR sequences from a single TR, translates them into proteins,
-    and displays a protein sequence logo based on amino-acid frequencies.
+    and returns the amino-acid frequencies; pass `plot=True` for a sequence logo.
 
     Parameters
     ----------
@@ -418,128 +419,77 @@ def EvaluateTR_to_prot(
     # Normalize counts to probabilities per position
     df = df.div(df.sum(axis=1), axis=0)
 
-    plt.figure(figsize=(12, 4))
-    logomaker.Logo(
-        df,
-        color_scheme="chemistry",
-        shade_below=0.5,
-        fade_below=0.5
-    )
-    plt.title("Protein Sequence Logo")
-    plt.ylabel("Frequency")
-    plt.xlabel("Amino acid position")
-    plt.tight_layout()
-    plt.show()
+    if plot:
+        plt.figure(figsize=(12, 4))
+        logomaker.Logo(
+            df,
+            color_scheme="chemistry",
+            shade_below=0.5,
+            fade_below=0.5
+        )
+        plt.title("Protein Sequence Logo")
+        plt.ylabel("Frequency")
+        plt.xlabel("Amino acid position")
+        plt.tight_layout()
+        plt.show()
 
     return Counter(proteins)
 
 
-# %% ../nbs/API/09_lstm.ipynb #42378de4-e643-4097-86b8-3a709638923a
-from . import predictions
+# %% ../nbs/API/09_lstm.ipynb #5ed2963a
+def _teacher_forced_loglik(TR_batch, VR_batch):
+    """Log-likelihood of each VR given its TR, by teacher forcing.
 
-def optimize_sequence_display_proteins(original_seq: str,
-    frame_offset: int = 0,
-    dict_allowed_AAs = None,
-    dict_allowed_AAs_max_min = None,
-    CHANGES: int = 6,
-    freq_min: float = 0.2,
-    N: int = 1,
-    forbidden_positions: list[int] = [],
-    threshold: float = 0.7,
-    codon_usage: dict = codon_usage_ecoli,
-    NDGR: int = 100
-):
+    The decoder is a single-step model: given one position, the previous
+    (TR, VR) pair and the LSTM state, it returns the distribution for that
+    position only. Feeding it the whole sequence at once returns just the last
+    position, which is what `generate_sequence_from_onehot` works around by
+    stepping. The likelihood has to be computed the same way: step through the
+    sequence, read off the probability of the base the VR actually carries, and
+    carry the state forward.
     """
-    Optimize a DNA sequence via synonymous codon substitutions and shows the sequence logo for each of the optimal sequences.
+    assert all(len(tr) == len(vr) for tr, vr in zip(TR_batch, VR_batch)), "Mismatched lengths"
+    assert len({len(tr) for tr in TR_batch}) <= 1, "All sequences in a batch must share a length"
+    if not TR_batch: return np.array([])
 
-    This function performs a beam-search–based optimization of a nucleotide
-    sequence by iteratively proposing single-codon synonymous changes and
-    evaluating them with the two scoring functions. The search stops early if a
-    variant meets the specified score thresholds, otherwise the best Pareto-
-    optimal solution is returned.
+    firstmodel, secondmodel = _get_models()
+    vocab_size, lstm_units = 4, 16
+    n, seq_length = len(TR_batch), len(TR_batch[0])
 
-    Parameters
-    ----------
-    original_seq : str
-        Original DNA sequence to optimize.
-    frame_offset : int, default=0
-        Reading-frame offset (0, 1, or 2) used when grouping codons.
-    dict_allowed_AAs : dict, defaultdict(list)
-        Dictionary of positions (keys) and AAs (values) where you want to reach all AAs in the list with the codon. If not mentioned, does as before.
-        Selects for codons which do not reach (by adenine mutation) stop codons. If not possible, allow them anyway.
-    dict_allowed_AAs_max_min : dict, default=None
-        Dictionary of positions (keys) and either you want maximum diversity ('max') or mimimum diversity ('min')  at the positions mentionned in dict_allowed_AAs. Diversity = number of AAs reachable by adenine mutations (already removed codons reaching stop codons). 
-        If not mentioned, any sequence that fullfills dict_allowed_AAs[i] is accepted.
-    CHANGES : int, default=6
-        Maximum number of codon substitutions allowed (on top of the AAs requirements from the previous argument).
-    freq_min : float, default=0.2
-        Lowest usage frequency acceptable.
-    N : int, default=1
-        Number of putative TR to output.
-    forbidden_positions : list[int], optional
-        Nucleotide positions that must not be modified.
-    threshold : float, default=0.7
-        Minimum required value for both `Score_TRSp` and `Score_TRSpAvd` to
-        accept a sequence as optimal.
-    codon_usage : dict, optional
-        Codon usage table of E. Coli mapping amino acids to codons and frequencies.
-    NDGR : int, default=100
-        Number of sequences to generate via the LSTM for sequence logo estimation. 
-    Returns
-    -------
-    dict
-        Dictionary containing:
-        - `Original_Sequence` : str  
-          Input DNA sequence.
-        - `New_Variant` : str  
-          Optimized DNA sequence.
-        - `Rank` : int or None  
-          rank of the sequence (by score).
-        - `Score` : float or None  
-          score of the selected variant (geometrical mean).
-        - `Score_TRSp` : float or None  
-          TR+Sp score of the selected variant.
-        - `Score_TRSpAvd` : float or None  
-          Avd+TR+Sp score of the selected variant.
-        - `Proteins` : Counter
-          The proteins that are generated by the DGR.  
-    Notes
-    -----
-    - The algorithm keeps only Pareto-optimal candidates at each iteration.
-    - If no variant satisfies the threshold criteria, the best-scoring
-      sequence after `CHANGES` iterations is returned.
-    - Internal scoring and plotting are handled by `evaluate_sequences`.
+    # one-hot of the reversed TR, plus the positional index
+    X = np.array([
+        np.concatenate((one_hot_encode(tr[::-1]), [[i] for i in range(seq_length)]), axis=1)
+        for tr in TR_batch
+    ])
+    Y = np.array([one_hot_encode(vr[::-1]) for vr in VR_batch])
 
-    Examples
-    --------
-    ```python
-    result = optimize_sequence("ATGGCTGCTTAA")
-    result["New_Variant"]
-    ```
-    """
-    record=predictions.optimize_sequence(
-    original_seq,
-    frame_offset,
-    dict_allowed_AAs,
-    dict_allowed_AAs_max_min,
-    CHANGES,
-    freq_min,
-    N,
-    forbidden_positions,
-    threshold,
-    codon_usage
-)
-    for i in range(len(record)):
-        Prot=EvaluateTR_to_prot(record[i]["New_Variant"],NDGR=NDGR,offset=frame_offset)
-        record[i]['Proteins']=Prot
-    return record
+    inter_softmax_out, inter_relu_out = firstmodel.predict(X, verbose=0)
+    h = np.zeros((n, lstm_units))
+    c = np.zeros((n, lstm_units))
+    X_mut = np.zeros((n, 1, 2 * vocab_size + 1))
+    X_mut[:, 0, -1] = 1  # start token
+
+    log_likelihoods = np.zeros(n)
+    for t in range(seq_length):
+        output, h, c = secondmodel.predict(
+            [X[:, t:t+1, :], X_mut,
+             inter_softmax_out[:, t:t+1, :], inter_relu_out[:, t:t+1, :], h, c],
+            verbose=0)
+        probs = output[:, 0, :]
+        idx = Y[:, t, :].argmax(axis=1)
+        log_likelihoods += np.log(probs[np.arange(n), idx] + 1e-8)
+        if t < seq_length - 1:
+            X_mut[:, 0, :vocab_size] = X[:, t, :vocab_size]            # the TR base
+            X_mut[:, 0, vocab_size:2*vocab_size] = Y[:, t, :]          # the VR base actually seen
+            X_mut[:, 0, -1] = 0
+    return log_likelihoods
 
 # %% ../nbs/API/09_lstm.ipynb #265d2712-2bfa-482d-8c19-420b904a0350
 def compute_likelihood(TR, VR):
     """
     Compute the log-likelihood of generating a variant sequence (VR)
     given a template/reference sequence (TR).
-    
+
     Parameters
     ----------
     TR : str
@@ -553,60 +503,7 @@ def compute_likelihood(TR, VR):
         Log-likelihood of VR given TR.
     """
     assert len(TR) == len(VR), "Mismatched lengths"
-
-    firstmodel, secondmodel = _get_models()
-
-    vocab_size = 4
-    lstm_units = 16
-    seq_length = len(TR)
-
-    # Encode and reverse sequences.
-    # X includes one-hot encoding of TR plus positional indices.
-    X = np.array([
-        np.concatenate(
-            (one_hot_encode(TR[::-1]), [[i] for i in range(len(TR))]),
-            axis=1
-        )
-    ])
-
-    # One-hot encode reversed VR (target sequence)
-    Y = np.array([one_hot_encode(VR[::-1])])
-
-    # Run first model to obtain intermediate representations
-    inter_softmax_out, inter_relu_out = firstmodel.predict(X, verbose=0)
-
-    # Initialize mutation model input tensor
-    # Shape: (batch, sequence length, 2*vocab_size + 1)
-    X_mut = np.zeros((1, seq_length, 2 * vocab_size + 1))
-
-    # Set start token for first timestep
-    X_mut[:, 0, -1] = 1
-
-    # Populate mutation input using previous TR and VR tokens
-    for t in range(1, seq_length):
-        X_mut[:, t, :vocab_size] = X[:, t - 1, :vocab_size]
-        X_mut[:, t, vocab_size:2 * vocab_size] = Y[:, t - 1, :]
-
-    # Initialize LSTM hidden and cell states
-    initial_h = np.zeros((1, lstm_units))
-    initial_c = np.zeros((1, lstm_units))
-
-    # Run second model for full sequence prediction
-    outputs, _, _ = secondmodel.predict(
-        [X, X_mut, inter_softmax_out, inter_relu_out, initial_h, initial_c],
-        verbose=0
-    )
-
-    # Compute total log-likelihood over sequence
-    log_likelihoods = []
-    for b in range(1):
-        log_prob = 0.0
-        for t in range(seq_length):
-            prob = outputs[b, t, np.argmax(Y[b, t])]
-            log_prob += np.log(prob + 1e-8)
-        log_likelihoods.append(log_prob)
-
-    return log_likelihoods[0]
+    return float(_teacher_forced_loglik([TR], [VR])[0])
 
 # %% ../nbs/API/09_lstm.ipynb #4f2e37b5-bee4-4b0a-b053-c032307a047e
 def compute_likelihood_batch(TR_batch, VR_batch):
@@ -629,66 +526,12 @@ def compute_likelihood_batch(TR_batch, VR_batch):
     list of float
         Log-likelihoods for each (TR, VR) pair.
     """
-    assert all(len(tr) == len(vr) for tr, vr in zip(TR_batch, VR_batch)), "Mismatched lengths"
-
-    firstmodel, secondmodel = _get_models()
-
-    vocab_size = 4
-    lstm_units = 16
-    batch_size = len(TR_batch)
-    seq_length = max ([len(tr) for tr in TR_batch])
-
-    # Encode and reverse TR sequences with positional indices
-    X = np.array([
-        np.concatenate(
-            (one_hot_encode(TR_batch[k][::-1]), [[i] for i in range(len(TR_batch[k]))]),
-            axis=1
-        )
-        for k in range(len(TR_batch))
-    ])
-
-    # Encode and reverse VR sequences
-    Y = np.array([one_hot_encode(vr[::-1]) for vr in VR_batch])
-
-    # First model forward pass
-    inter_softmax_out, inter_relu_out = firstmodel.predict(X, verbose=0)
-
-    # Initialize mutation input tensor
-    X_mut = np.zeros((batch_size, seq_length, 2 * vocab_size + 1))
-
-    # Start tokens at first timestep
-    X_mut[:, 0, -1] = 1
-
-    # Fill mutation inputs using previous TR and VR tokens
-    for t in range(1, seq_length):
-        X_mut[:, t, :vocab_size] = X[:, t - 1, :vocab_size]
-        X_mut[:, t, vocab_size:2 * vocab_size] = Y[:, t - 1, :]
-
-    # Initialize LSTM states for entire batch
-    initial_h = np.zeros((batch_size, lstm_units))
-    initial_c = np.zeros((batch_size, lstm_units))
-
-    # Run second model
-    outputs, _, _ = secondmodel.predict(
-        [X, X_mut, inter_softmax_out, inter_relu_out, initial_h, initial_c],
-        verbose=0
-    )
-
-    # Accumulate log-likelihoods per sequence
-    log_likelihoods = []
-    for b in range(batch_size):
-        log_prob = 0.0
-        for t in range(seq_length):
-            prob = outputs[b, t, np.argmax(Y[b, t])]
-            log_prob += np.log(prob + 1e-100)
-        log_likelihoods.append(log_prob)
-
-    return log_likelihoods
+    return [float(x) for x in _teacher_forced_loglik(list(TR_batch), list(VR_batch))]
 
 # %% ../nbs/API/09_lstm.ipynb #c2bc5a52-813b-4d64-8c3b-21b5d5e01ce9
 def compute_likelihood_list(TR_list, VR_list):
     """
-    Compute log-likelihoods for (TR, VR) pairs.
+    Compute log-likelihoods for (TR, VR) pairs, of any mix of lengths.
 
     Parameters
     ----------
@@ -706,38 +549,17 @@ def compute_likelihood_list(TR_list, VR_list):
     assert all(len(tr) == len(vr) for tr, vr in zip(TR_list, VR_list)), \
         "Mismatched TR/VR lengths"
 
-    # --- group indices by sequence length ---
-    length_to_indices = {}
-    for i, tr in enumerate(TR_list):
-        L = len(tr)
-        length_to_indices.setdefault(L, []).append(i)
+    by_length = {}
+    for i, tr in enumerate(TR_list): by_length.setdefault(len(tr), []).append(i)
 
-    # output container
-    log_likelihoods = [None] * len(TR_list)
-
-    # --- process each length group ---
-    for L, indices in length_to_indices.items():
-        TR_batch = [TR_list[i] for i in indices]
-        VR_batch = [VR_list[i] for i in indices]
-
-        batch_lls = compute_likelihood_batch(
-            TR_batch,
-            VR_batch
-        )
-
-        # restore original order
-        for idx, ll in zip(indices, batch_lls):
-            log_likelihoods[idx] = ll
-
-    return log_likelihoods
-
+    out = [None] * len(TR_list)
+    for _, idxs in by_length.items():
+        lls = _teacher_forced_loglik([TR_list[i] for i in idxs], [VR_list[i] for i in idxs])
+        for i, ll in zip(idxs, lls): out[i] = float(ll)
+    return out
 
 # %% ../nbs/API/09_lstm.ipynb #48e675a6-4402-43cf-88b3-a78bee57ac3f
-def compute_likelihood_matrix(
-    TR_list,
-    VR_list,
-    batch_size=64
-):
+def compute_likelihood_matrix(TR_list, VR_list, batch_size=64):
     """
     Compute a matrix of log-likelihoods where each entry (i, j)
     corresponds to the log-likelihood of generating VR_list[j]
@@ -752,41 +574,17 @@ def compute_likelihood_matrix(
     VR_list : list of str
         List of variant sequences.
     batch_size : int
-        (Currently unused) Intended batch size for future optimization.
+        Unused; kept for backwards compatibility.
 
     Returns
     -------
     list of list of float
-        Log-likelihood matrix of shape (len(TR_list), len(VR_list)).
+        Matrix of log-likelihoods, rows indexed by TR and columns by VR.
     """
-    result_matrix = []
-
-    for i in range(len(TR_list)):
-        row = []
-        TR = TR_list[i]
-
-        # Filter VRs matching current TR length
-        valid_VRs = [vr for vr in VR_list if len(vr) == len(TR)]
-
-        if not valid_VRs:
-            # No compatible VRs
-            row = [-np.inf] * len(VR_list)
-        else:
-            # Compute likelihoods for all compatible VRs
-            batch_TRs = [TR] * len(valid_VRs)
-            log_likelihoods = compute_likelihood_batch(
-                batch_TRs,
-                valid_VRs
-            )
-
-            idx = 0
-            for vr in VR_list:
-                if len(vr) != len(TR):
-                    row.append(-np.inf)
-                else:
-                    row.append(log_likelihoods[idx])
-                    idx += 1
-
-        result_matrix.append(row)
-
-    return result_matrix
+    matrix = [[float("-inf")] * len(VR_list) for _ in TR_list]
+    for i, tr in enumerate(TR_list):
+        cols = [j for j, vr in enumerate(VR_list) if len(vr) == len(tr)]
+        if not cols: continue
+        lls = _teacher_forced_loglik([tr] * len(cols), [VR_list[j] for j in cols])
+        for j, ll in zip(cols, lls): matrix[i][j] = float(ll)
+    return matrix
