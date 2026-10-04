@@ -1,8 +1,4 @@
-"""Analysing DGRec data
-
-Modules:
-
-- `dgrec.pairwise2`: Pairwise sequence alignment using a dynamic programming algorithm."""
+"""Analysing DGRec data"""
 
 __version__ = "0.2.0"
 

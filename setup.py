@@ -1,5 +1,4 @@
 from configparser import ConfigParser
-from setuptools import Extension
 import setuptools, shlex
 
 # note: all settings are in settings.ini; edit there, not here
@@ -29,10 +28,6 @@ min_python = cfg['min_python']
 lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
 dev_requirements = (cfg.get('dev_requirements') or '').split()
 
-# optional=True: the extension is a speed-up with a pure-Python fallback in pairwise2.py,
-# so a machine without a compiler or Python headers should still get a working install.
-EXTENSIONS=[Extension("dgrec.cpairwise2", ["dgrec/cpairwise2module.c"], optional=True)]
-
 setuptools.setup(
     name = cfg['lib_name'],
     license = lic[0],
@@ -43,7 +38,6 @@ setuptools.setup(
     ] + ['Programming Language :: Python :: '+o for o in py_versions[py_versions.index(min_python):]] + (['License :: ' + lic[1] ] if lic[1] else []),
     url = cfg['git_url'],
     packages = setuptools.find_packages(),
-    ext_modules=EXTENSIONS,
     include_package_data = True,
     package_data={"dgrec.example_data": ["*"]},  # Include all files in example_data
     install_requires = requirements,

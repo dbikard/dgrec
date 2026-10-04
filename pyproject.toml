@@ -9,7 +9,7 @@ description = "Analysing DGRec data"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
 license = "Apache-2.0"
-license-files = ["LICENSE", "dgrec/LICENSE.biopython"]
+license-files = ["LICENSE"]
 authors = [{name = "David Bikard", email = "david.bikard@pasteur.fr"}]
 keywords = ['nbdev', 'jupyter', 'notebook', 'python']
 classifiers = ["Natural Language :: English", "Intended Audience :: Science/Research", "Development Status :: 4 - Beta", "Topic :: Scientific/Engineering :: Bio-Informatics", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13"]
@@ -34,6 +34,9 @@ dgrec = "dgrec.cli:dgrec"
 
 [tool.setuptools.dynamic]
 version = {attr = "dgrec.__version__"}
+
+[tool.setuptools.exclude-package-data]
+"*" = ["__pycache__/*", "*.pyc"]
 
 [tool.setuptools.packages.find]
 include = ["dgrec", "dgrec.*"]

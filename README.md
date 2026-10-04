@@ -30,7 +30,7 @@ The [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) package provid
 [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) requires **Python 3.10 to 3.13** and installs with pip:
 
 ``` sh
-pip install git+https://github.com/dbikard/dgrec.git
+pip install dgrec
 ```
 
 All dependencies, including ViennaRNA, are installed automatically — no conda environment is needed.
@@ -38,10 +38,8 @@ All dependencies, including ViennaRNA, are installed automatically — no conda 
 The LSTM model needs TensorFlow, which is an optional extra because it is large:
 
 ``` sh
-pip install "dgrec[lstm] @ git+https://github.com/dbikard/dgrec.git"
+pip install "dgrec[lstm]"
 ```
-
-The package also builds a small C extension that speeds up read alignment. If the machine has no C compiler or no Python development headers, the build is skipped and a slower pure-Python aligner is used instead; installing the headers (for example `apt install python3-dev`, or working inside a conda environment) restores the fast path.
 
 ## Quick start
 

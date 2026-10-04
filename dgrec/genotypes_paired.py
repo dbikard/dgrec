@@ -46,8 +46,8 @@ def get_UMI_genotype_paired(fastq_path_fwd: str, #path to the input fastq file r
 
     align_param={"match":2,
                 "mismatch":-1, 
-                "gap_open":-1, 
-                "gap_extend":-.5,
+                "gap_open":-6, 
+                "gap_extend":-1,
                 "ungapped_max":8,
                 }
     
