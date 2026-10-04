@@ -259,7 +259,7 @@ def plot_distribution(counts: np.ndarray, results: dict):
     plt.tight_layout()
     plt.show()
 
-# %% ../nbs/API/10_library_size.ipynb #7ca931ed
+# %% ../nbs/API/10_library_size.ipynb #61eb1734
 def estimate_library_size_lstm(
     TR: str,                  # the template region the library was built from
     n: int,                   # number of mutagenized molecules to extrapolate to
