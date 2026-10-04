@@ -54,7 +54,7 @@ The package ships with a small example dataset, so the code below runs as writte
 ``` python
 import dgrec
 
-dgrec.score('AAATGATCGCCAAATCTGAACAGGAAATTGGCAAAGCAACCGCTAAATACTTTTTCTACTCAAACATTAT')
+dgrec.tr_score('AAATGATCGCCAAATCTGAACAGGAAATTGGCAAAGCAACCGCTAAATACTTTTTCTACTCAAACATTAT')
 ```
 
     0.84
