@@ -470,14 +470,10 @@ def optimize_sequence(
     elif check_any_AAC_position(dict_allowed_AAs,dict_allowed_AAs_max_min,len(original_seq)//3)!=[]: #Add AAC at positions where you want to maximize diversity but didn't precise the allowed AAs
         forbidden_to_add=check_any_AAC_position(dict_allowed_AAs,dict_allowed_AAs_max_min,len(original_seq)//3)
         seq=original_seq
-        print(forbidden_to_add)
-        print(seq)
         for i in forbidden_to_add:
             if seq[3*i+frame_offset:3*i+3+frame_offset]!="AAC":
                 codon_changes_done += 1
             seq=seq[:3*i+frame_offset]+'AAC'+seq[3*i+3+frame_offset:]
-            print(seq)
-        print(seq)
         forbidden_to_add=[3*i+frame_offset for i in forbidden_to_add]
         
         beam = valid_seq_reach_AAs(

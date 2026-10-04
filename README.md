@@ -60,9 +60,9 @@ dgrec.score('AAATGATCGCCAAATCTGAACAGGAAATTGGCAAAGCAACCGCTAAATACTTTTTCTACTCAAACAT
     0.84
 
 A sequence that scores poorly can usually be rescued by recoding. The TR is itself non-coding,
-but it has to stay homologous to the variable region it diversifies, and that region lies in a
-protein-coding gene — so the recoding uses codon substitutions that are synonymous for that
-protein, introduced into both. See
+but it is read in the frame of the gene that carries the variable region (VR) it diversifies, so
+the substitutions are chosen to leave that protein unchanged. Making the same changes in the VR
+keeps the two homologous, which is what the recombination step relies on. See
 [How to use](https://dbikard.github.io/dgrec/how_to.html#before-the-experiment-designing-a-tr).
 
 **After the experiment** — call genotypes from the amplicon reads, deduplicated by UMI:
