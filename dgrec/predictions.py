@@ -11,6 +11,7 @@ __all__ = ['model_Sp', 'model_Avd_Sp', 'model_whole', 'score', 'score_list', 'DG
 
 # %% ../nbs/API/05_predictions.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import pickle
+import warnings
 import sklearn
 import numpy as np
 import pandas as pd
@@ -230,7 +231,7 @@ def _valid_seq_reach_AAs(
                 filtered_codons=[filtered_codons[k] for k in range(len(L)) if L[k]==min(L)]
         # If no valid codons → no valid sequences at all
         if not filtered_codons:
-            print("No valid sequence!")
+            warnings.warn("No codon satisfies the requested amino-acid constraints at this position; returning no sequences.", stacklevel=2)
             return []
 
         allowed_codons_per_pos[i] = filtered_codons
@@ -303,7 +304,7 @@ def _propose_single_codon_changes(
                 candidate_codons &= codons_compatible_with_AA(aa)
             candidate_codons_not_stop=candidate_codons - codons_reaching_stop #remove codons reaching stop codons by A mutagenesis
             if not candidate_codons_not_stop:
-                print('All valid codons reach stop codons')
+                warnings.warn('Every codon allowed here can mutate to a stop codon; keeping them anyway.', stacklevel=2)
             else:
                 candidate_codons=candidate_codons_not_stop
             filter_codons=[]
