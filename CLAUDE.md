@@ -154,9 +154,11 @@ range: setuptools overrides the values in `setup.py`/`settings.ini` with it, so 
 - **ViennaRNA** is a runtime dependency: `dgrec/__init__.py` imports `predictions` and
   `encoding`, which import it at module level. Import it as `RNA` — the name provided by both
   the PyPI wheel and the conda package
+- **biopython>=1.86**: the aligner's end-gap scores use the attribute names introduced in 1.86
 - **tensorflow[and-cuda]>=2.17** is the optional `lstm` extra, guarded by `_require_tensorflow()`
 - Read alignment uses Biopython's `PairwiseAligner` (global; defaults match 2, mismatch -1,
-  gap open -6, gap extend -1 - the former `STRICT_ALIGN_PARAMS`). The package is pure
+  gap open -6, gap extend -1 - the former `STRICT_ALIGN_PARAMS`; read overhang free
+  and end deletions favoured on ties, so both land at the read ends where `ignore_pos` masks them). The package is pure
   Python - no C extension, so one `py3-none-any` wheel serves every platform. 0.2.0 dropped
   the vendored `pairwise2` and moved the default gap penalties from open -1/extend -0.5 to
   -6/-1. Both change genotype calls relative to 0.1.x; the aligner change because the two

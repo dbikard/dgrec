@@ -15,7 +15,7 @@ keywords = ['nbdev', 'jupyter', 'notebook', 'python']
 classifiers = ["Natural Language :: English", "Intended Audience :: Science/Research", "Development Status :: 4 - Beta", "Topic :: Scientific/Engineering :: Bio-Informatics", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13"]
 # ViennaRNA is a runtime dependency, not an optional one: dgrec/__init__.py imports
 # predictions and encoding, which both import it at module level.
-dependencies = ['fastcore', 'pandas', 'biopython', 'click', 'matplotlib', 'seaborn', 'tqdm', 'scikit-learn==1.7.1', 'logomaker', 'svgwrite', 'ViennaRNA']
+dependencies = ['fastcore', 'pandas', 'biopython>=1.86', 'click', 'matplotlib', 'seaborn', 'tqdm', 'scikit-learn==1.7.1', 'logomaker', 'svgwrite', 'ViennaRNA']
 
 [project.urls]
 Repository = "https://github.com/dbikard/dgrec"

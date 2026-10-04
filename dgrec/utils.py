@@ -48,8 +48,15 @@ def mut_rix(mutations):
 @lru_cache
 def _aligner(match, mismatch, gap_open, gap_extend):
     "A global aligner for these scores, built once and reused across reads."
-    return PairwiseAligner(mode="global", match_score=match, mismatch_score=mismatch,
-                           open_gap_score=gap_open, extend_gap_score=gap_extend)
+    aligner = PairwiseAligner(mode="global", match_score=match, mismatch_score=mismatch,
+                              open_gap_score=gap_open, extend_gap_score=gap_extend)
+    # A read running past either end of the reference costs nothing. A read stopping short
+    # of it pays the usual gap penalty, minus a token 0.01 so that, among equally good
+    # alignments, the missing bases are placed at the end rather than inside a homopolymer.
+    aligner.end_insertion_score = 0
+    aligner.open_end_deletion_score = gap_open + 0.01
+    aligner.extend_end_deletion_score = gap_extend
+    return aligner
 
 def get_mutations(seqA,seqB, match=2, mismatch=-1, gap_open=-6, gap_extend=-1,
                   ungapped_max=8, #skip the alignment when the sequences are the same length and differ at fewer than this many positions. 0 disables the shortcut.
@@ -60,6 +67,10 @@ def get_mutations(seqA,seqB, match=2, mismatch=-1, gap_open=-6, gap_extend=-1,
     Alignment is global, with Biopython's `PairwiseAligner`. When several alignments
     score equally - typically an indel inside a homopolymer or short repeat, which can
     be placed at any of several equivalent positions - the first one it returns is used.
+
+    A read that runs past the end of the reference, or stops short of it, is reported as
+    an indel at the very end, where `ignore_pos` can mask it - not as an indel inside a
+    terminal homopolymer. Overhanging read bases are not penalised.
 
     Amplicon reads mostly carry substitutions only, and for those a direct
     comparison gives the same answer as the alignment at a fraction of the cost.
