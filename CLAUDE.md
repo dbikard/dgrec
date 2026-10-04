@@ -17,7 +17,18 @@ hypermutagenesis", Nature Biotechnology (2026). https://doi.org/10.1038/s41587-0
 
 DGRec combines **DGR** (Diversity Generating Retroelement, from Bordetella phage BPP-1) with **recombineering** (CspRecT + mutL*) to achieve targeted in vivo hypermutation in E. coli.
 
-**Key mechanism**: The DGR reverse transcriptase (bRT) + Avd reverse-transcribe the **Template Repeat (TR)** RNA, making errors predominantly at **adenine positions** (~30% error rate at A, <2% at other bases). CspRecT integrates the mutagenic cDNA into the **Variable Repeat (VR)** in the target gene. mutL* prevents mismatch repair from correcting mutations.
+**Key mechanism**: The DGR reverse transcriptase (bRT) + Avd reverse-transcribe the **template
+region (TR)** — a segment of the **dgrRNA**, a small non-coding RNA — making errors predominantly
+at **adenine positions** (~30% error rate at A, <2% at other bases). CspRecT integrates the
+mutagenic cDNA into the **variable region (VR)** of the target gene. mutL* prevents mismatch
+repair from correcting mutations.
+
+**The TR does not encode anything.** It is non-coding RNA. It does, however, have to stay
+homologous to the VR, which does sit in a protein-coding gene — so "synonymous recoding" of a TR
+means: read the sequence in the reading frame of *that* gene, change codons without changing the
+protein it encodes, and apply the same changes to the TR and the VR so the two stay homologous.
+Wording in the docs that says the TR "encodes a protein" is wrong; see the manuscript
+(`ms/main.tex`, the recoding section and the paragraph on TR-VR homology).
 
 **Why adenine bias matters for the code**:
 - `is_dgrec()` validates the adenine bias signature (≥70% A mutations)

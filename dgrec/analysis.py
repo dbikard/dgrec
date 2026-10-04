@@ -70,7 +70,7 @@ CONVERSION_EVIDENCE = {("A-div", "to_TR"), ("N-div", "to_TR")}
 
 # %% ../nbs/API/03_analysis.ipynb #f22e9766
 class TRAlignment:
-    """Positional annotation of an amplicon against its template repeat.
+    """Positional annotation of an amplicon against its template region.
 
     Two facts are kept apart, because merging them mixes *was this molecule
     converted* with *did the reverse transcriptase err here*:
@@ -93,7 +93,7 @@ class TRAlignment:
 
     def __init__(self,
                  ref_seq: str,  #reference amplicon sequence
-                 tr_seq: str,  #template repeat, in the same orientation as ref_seq
+                 tr_seq: str,  #template region, in the same orientation as ref_seq
                  vr_start: int = None,  #0-based start of the VR; located automatically if None
                  min_identity: float = 0.5,  #identity required when locating the VR
                  ):

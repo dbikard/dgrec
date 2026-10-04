@@ -1,4 +1,4 @@
-"""Functions to encode TR (Template Repeat) sequences as feature vectors for machine learning models. Uses ViennaRNA to compute RNA secondary structure folding energies. The key feature is ΔE = E(TR+Spacer) - E(TR), which captures whether the spacer interaction disrupts the TR fold — this affects bRT accessibility and predicts TR activity.
+"""Functions to encode TR (template region) sequences as feature vectors for machine learning models. Uses ViennaRNA to compute RNA secondary structure folding energies. The key feature is ΔE = E(TR+Spacer) - E(TR), which captures whether the spacer interaction disrupts the TR fold — this affects bRT accessibility and predicts TR activity.
 
 Docs: https://dbikard.github.io/dgrec/API/encoding.html.md"""
 
