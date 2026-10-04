@@ -197,12 +197,12 @@ def _get_models():
     """Load LSTM models on first use."""
     _require_tensorflow()
     if 'firstmodel' not in _models_cache:
-        data_path = get_example_data_dir()
-        model_name = 'LSTM_model_8_16.keras'
-        model_path = os.path.join(data_path, model_name)
+        _data_path = get_example_data_dir()
+        _model_name = 'LSTM_model_8_16.keras'
+        _model_path = os.path.join(_data_path, _model_name)
         # --- Load your full trained model first ---
         model_TR_to_VR = tf.keras.models.load_model(
-            model_path, #"LSTM_model_8_16_tf220.keras"
+            _model_path, #"LSTM_model_8_16_tf220.keras"
             custom_objects={
                 'masked_categorical_crossentropy': masked_categorical_crossentropy,
                 'masked_accuracy': masked_accuracy,
@@ -444,7 +444,7 @@ def optimize_sequence_display_proteins(original_seq: str,
     CHANGES: int = 6,
     freq_min: float = 0.2,
     N: int = 1,
-    forbidden_positions: list[int] = [],
+    forbidden_positions: list[int] = None,
     threshold: float = 0.7,
     codon_usage: dict = codon_usage_ecoli,
     NDGR: int = 100
@@ -508,12 +508,12 @@ def optimize_sequence_display_proteins(original_seq: str,
     - The algorithm keeps only Pareto-optimal candidates at each iteration.
     - If no variant satisfies the threshold criteria, the best-scoring
       sequence after `CHANGES` iterations is returned.
-    - Internal scoring and plotting are handled by `evaluate_sequences`.
+    - Internal scoring and plotting are handled by `_evaluate_sequences`.
 
     Examples
     --------
     ```python
-    result = optimize_sequence("ATGGCTGCTTAA")
+    variants = optimize_sequence_display_proteins(TR_seq, N=5)
     result["New_Variant"]
     ```
     """
