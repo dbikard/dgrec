@@ -232,12 +232,23 @@ def parse_genotypes(genotypes_file):
             gen_list.append((row[0],int(row[1])))
     return gen_list
 
+# %% ../nbs/API/07_utils.ipynb #2f2f68b5
+def _genotype_pairs(gen_list):
+    """Accept either form of a genotype list.
+
+    `get_genotypes` returns (genotype, count) tuples by default and a DataFrame
+    with `as_dataframe=True`; everything downstream wants the tuples.
+    """
+    if hasattr(gen_list, "itertuples"):   #a pandas DataFrame
+        return [(str(g), int(n)) for g, n in gen_list.itertuples(index=False, name=None)]
+    return gen_list
+
 # %% ../nbs/API/07_utils.ipynb #c12ee4fa
 def get_aa_mut_list(gen_list,refseq, frame=0, ori=1):
     """Converts a DNA genotype list to an amino acid genotype list.
     Excludes genotypes with indels or Ns. Returns a sorted list of (aa_genotype_string, count) tuples."""
     amino_mut_dic={}
-    for gen, n in gen_list:
+    for gen, n in _genotype_pairs(gen_list):
         if "-" not in gen: #excludes insertion or deletions as they will lead to frameshifts
             if "N" not in gen:  #exclude Ns
                 mut=get_prot_mut(gen, refseq, frame=frame, ori=ori)

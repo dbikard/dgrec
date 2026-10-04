@@ -403,7 +403,7 @@ def _check_any_AAC_position(dict_allowed,dict_allowed_max_min,length):
                 forbidden_to_add.append(i)
         return(forbidden_to_add)
 
-# %% ../nbs/API/05_predictions.ipynb #d70b4bcb
+# %% ../nbs/API/05_predictions.ipynb #8e6abb11
 def _split_diversify(diversify):
     """Split a `diversify` dict into the (allowed amino acids, max/min) pair used internally.
 

@@ -14,6 +14,7 @@ import gzip as gz
 import os
 from collections import defaultdict, Counter
 import numpy as np
+import pandas as pd
 import itertools
 import click
 import csv
@@ -127,6 +128,7 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
                     quality_threshold: int = 30, #threshold value used to filter out reads of poor average quality
                     ignore_pos: list = None, #list of positions that are ignored in the genotype
                     verbose: bool = True, #print a summary of read, UMI and genotype counts
+                    as_dataframe: bool = False, #return a DataFrame with genotype/count columns instead of (genotype, count) tuples
                     max_mutations: int = 15, #reads with more mutations than this are discarded as bad data
                     base_quality_threshold: int = 0, #if >0, bases below this Phred score are masked and never called as mutations
                     reads_per_umi_thr: int = 0, #minimum number of reads required to take a UMI into account. Using a number >2 enables to perform error correction for UMIs with multiple reads.
@@ -147,4 +149,6 @@ def get_genotypes(fastq_path: str, #path to the input fastq file
     UMI_gen_dict=correct_UMI_genotypes(UMI_dict, reads_per_umi_thr)
     gen_list = genotype_UMI_counter(UMI_gen_dict)
     if verbose: print("Number of genotypes:", len(gen_list))
+    if as_dataframe:
+        return pd.DataFrame(gen_list, columns=["genotype","count"])
     return gen_list

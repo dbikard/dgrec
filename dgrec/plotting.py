@@ -17,7 +17,7 @@ import os
 import numpy as np
 from Bio import SeqIO
 from typing import Union
-from .utils import str_to_mut, reverse_comp_geno_list, reverse_complement, get_prot_mut, parse_genotypes, get_aa_mut_list
+from .utils import str_to_mut, reverse_comp_geno_list, reverse_complement, get_prot_mut, parse_genotypes, get_aa_mut_list, _genotype_pairs
 from Bio.Seq import Seq
 
 # %% ../nbs/API/02_plotting.ipynb #6dcee1d6
@@ -42,7 +42,7 @@ def plot_mutations(gen_list: list, #list of genotypes. Each genotype is a tuple:
 
     symbols=["A","T","G","C","del","ins","N"]
     mut_arrays=dict([(s,np.zeros(L)) for s in symbols])
-    for gen, n in gen_list[1:]: #assumes the genotypes with the most molecules is the WT sequence and skips it
+    for gen, n in _genotype_pairs(gen_list)[1:]: #assumes the genotypes with the most molecules is the WT sequence and skips it
         g=gen.split(',')
         for mut in g:
             if mut:
@@ -109,12 +109,12 @@ def plot_mutations_percentage(gen_list: list, #list of genotypes. Each genotype 
 
     count_geno=0
     count_muta=0
-    for gen, n in gen_list:
+    for gen, n in _genotype_pairs(gen_list):
         count_geno+=n
 
     symbols=["A","T","G","C","del","ins","N"]
     mut_arrays=dict([(s,np.zeros(L)) for s in symbols])
-    for gen, n in gen_list: #assumes the genotypes with the most molecules is the WT sequence and skips it
+    for gen, n in _genotype_pairs(gen_list): #assumes the genotypes with the most molecules is the WT sequence and skips it
         if gen!='':
             g=gen.split(',')
             count_muta+=n
