@@ -7,8 +7,8 @@ Docs: https://dbikard.github.io/dgrec/API/lstm.html.md"""
 # %% auto #0
 __all__ = ['EPS', 'one_hot_encode', 'one_hot_decode', 'separate_model', 'generate_sequence_from_onehot', 'sequences_same_length',
            'pad_sequence', 'to_tensor_inputs', 'generate_sequences', 'generate_sequences_oneTR',
-           'predict_protein_diversity', 'optimize_sequence_display_proteins', 'EvaluateTR_to_prot',
-           'compute_likelihood', 'compute_likelihood_batch', 'compute_likelihood_list', 'compute_likelihood_matrix']
+           'predict_protein_diversity', 'compute_likelihood', 'compute_likelihood_batch', 'compute_likelihood_list',
+           'compute_likelihood_matrix']
 
 # %% ../nbs/API/09_lstm.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import logomaker
@@ -435,35 +435,6 @@ def predict_protein_diversity(
 
     return Counter(proteins)
 
-
-# %% ../nbs/API/09_lstm.ipynb #42378de4-e643-4097-86b8-3a709638923a
-import warnings
-from . import predictions
-
-def optimize_sequence_display_proteins(original_seq, *args, NDGR: int = 100, **kwargs):
-    """Deprecated. Run the search and annotate its result instead:
-
-    ```python
-    variants = dgrec.optimize_sequence(TR_seq, N=5)
-    for v in variants:
-        v['Proteins'] = predict_protein_diversity(v['New_Variant'], plot=True)
-    ```
-    """
-    warnings.warn("optimize_sequence_display_proteins() is deprecated; call optimize_sequence() "
-                  "and then predict_protein_diversity() on each New_Variant.",
-                  DeprecationWarning, stacklevel=2)
-    record = predictions.optimize_sequence(original_seq, *args, **kwargs)
-    offset = kwargs.get("frame_offset", args[0] if args else 0)
-    for v in record:
-        v['Proteins'] = predict_protein_diversity(v["New_Variant"], NDGR=NDGR, offset=offset, plot=True)
-    return record
-
-def EvaluateTR_to_prot(*args, **kwargs):
-    "Deprecated alias for `predict_protein_diversity` (which no longer plots unless asked)."
-    warnings.warn("EvaluateTR_to_prot() is deprecated; use predict_protein_diversity().",
-                  DeprecationWarning, stacklevel=2)
-    kwargs.setdefault("plot", True)
-    return predict_protein_diversity(*args, **kwargs)
 
 # %% ../nbs/API/09_lstm.ipynb #265d2712-2bfa-482d-8c19-420b904a0350
 def compute_likelihood(TR, VR):

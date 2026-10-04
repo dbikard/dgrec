@@ -6,9 +6,8 @@ Docs: https://dbikard.github.io/dgrec/API/predictions.html.md"""
 
 # %% auto #0
 __all__ = ['model_Sp', 'model_Avd_Sp', 'model_whole', 'tr_score', 'tr_score_list', 'tr_mutagenesis_percentage',
-           'tr_mutagenesis_percentage_list', 'score', 'score_list', 'DGR_percentage', 'DGR_percentage_list',
-           'pareto_front', 'codons_compatible_with_AA', 'mutate_adenine', 'get_aa_by_adenine_mutation',
-           'optimize_sequence']
+           'tr_mutagenesis_percentage_list', 'pareto_front', 'codons_compatible_with_AA', 'mutate_adenine',
+           'get_aa_by_adenine_mutation', 'optimize_sequence']
 
 # %% ../nbs/API/05_predictions.ipynb #f6f95cf2-5340-4818-8b9e-246fea3f7879
 import pickle
@@ -105,28 +104,6 @@ TR_name_list:list, #A list of strings of TRs names
         'TR_rates':10**rates
     })
     return score_df
-
-# %% ../nbs/API/05_predictions.ipynb #6c8693b9
-#Deprecated aliases, kept so that code written against the old names keeps working.
-def score(*args, **kwargs):
-    "Deprecated alias for `tr_score`."
-    warnings.warn("score() is deprecated; use tr_score().", DeprecationWarning, stacklevel=2)
-    return tr_score(*args, **kwargs)
-
-def score_list(*args, **kwargs):
-    "Deprecated alias for `tr_score_list`."
-    warnings.warn("score_list() is deprecated; use tr_score_list().", DeprecationWarning, stacklevel=2)
-    return tr_score_list(*args, **kwargs)
-
-def DGR_percentage(*args, **kwargs):
-    "Deprecated alias for `tr_mutagenesis_percentage`."
-    warnings.warn("DGR_percentage() is deprecated; use tr_mutagenesis_percentage().", DeprecationWarning, stacklevel=2)
-    return tr_mutagenesis_percentage(*args, **kwargs)
-
-def DGR_percentage_list(*args, **kwargs):
-    "Deprecated alias for `tr_mutagenesis_percentage_list`."
-    warnings.warn("DGR_percentage_list() is deprecated; use tr_mutagenesis_percentage_list().", DeprecationWarning, stacklevel=2)
-    return tr_mutagenesis_percentage_list(*args, **kwargs)
 
 # %% ../nbs/API/05_predictions.ipynb #3d404065-2302-4eb3-b36b-c077b3432cc9
 def pareto_front(sequences #Dataframe containing a sequence and its two scores
@@ -436,8 +413,6 @@ def optimize_sequence(
     original_seq,
     frame_offset= 0,
     diversify = None,
-    dict_allowed_AAs = None,
-    dict_allowed_AAs_max_min=None,
     CHANGES = 6,
     freq_min = 0.2,
     N = 1,
@@ -486,8 +461,7 @@ def optimize_sequence(
         Number of putative TR to output.
     forbidden_positions : list[int], optional
         Nucleotide positions that must not be modified. Note that this is keyed
-        by nucleotide, while `dict_allowed_AAs` and `dict_allowed_AAs_max_min`
-        are keyed by codon.
+        by nucleotide, while `diversify` is keyed by codon.
     threshold : float, default=0.7
         Minimum required value for both `Score_TRSp` and `Score_TRSpAvd` to
         accept a sequence as optimal.
@@ -528,17 +502,9 @@ def optimize_sequence(
     ```
     """
     if forbidden_positions is None: forbidden_positions = []
-    if diversify is not None:
-        if dict_allowed_AAs is not None or dict_allowed_AAs_max_min is not None:
-            raise ValueError("pass either diversify= or the deprecated dict_allowed_AAs/"
-                             "dict_allowed_AAs_max_min, not both")
-        dict_allowed_AAs, dict_allowed_AAs_max_min = _split_diversify(diversify)
-    elif dict_allowed_AAs is not None or dict_allowed_AAs_max_min is not None:
-        warnings.warn("dict_allowed_AAs and dict_allowed_AAs_max_min are deprecated; "
-                      "use diversify={pos: 'max'|[AAs]|('max'|'min',[AAs])}.",
-                      DeprecationWarning, stacklevel=2)
+    dict_allowed_AAs, dict_allowed_AAs_max_min = _split_diversify(diversify)
     codon_changes_done = 0
-    if dict_allowed_AAs_max_min==None:
+    if not dict_allowed_AAs and not dict_allowed_AAs_max_min:
         beam = [original_seq]
         seq=original_seq
         forbidden_final=forbidden_positions
