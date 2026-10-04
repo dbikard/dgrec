@@ -4,7 +4,7 @@ Modules:
 
 - `dgrec.pairwise2`: Pairwise sequence alignment using a dynamic programming algorithm."""
 
-__version__ = "0.1.4"
+__version__ = "0.2.0"
 
 from .example_data import get_example_data_dir
 from .genotypes import get_genotypes
