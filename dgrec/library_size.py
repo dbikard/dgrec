@@ -10,6 +10,7 @@ __all__ = ['find_best_breakpoint', 'estimate_library_size', 'plot_distribution']
 # %% ../nbs/API/10_library_size.ipynb #32f2f76e
 from .utils import parse_genotypes, str_to_mut
 import os
+import warnings
 import numpy as np
 from Bio import SeqIO
 import matplotlib.pyplot as plt
@@ -42,16 +43,17 @@ def find_best_breakpoint(counts: np.ndarray) -> tuple[int, float, float]:
     n_total = np.sum(counts)
     m_observed = len(counts)
     if m_observed < 20:
-        print("Warning: Low number of observed genotypes (< 20). Breakpoint estimation may be unstable. Using default values.")
-        return None
+        warnings.warn("Low number of observed genotypes (< 20); cannot estimate a breakpoint.",
+                      stacklevel=2)
+        return None, None, None
 
     best_b = -1
     best_alpha = 0.0
     best_intercept = 0.0
     max_r_squared = -1.0
 
-    # Define a search range for B. We need enough points in the tail for a stable fit.
-    # Start searching from rank 10 up to 50% of the observed genotypes.
+    # Define a search range for B: from rank 2 up to 50% of the observed genotypes,
+    # which leaves enough points in the tail for a stable fit.
     b_min = 2
     b_max = int(m_observed * 0.5)
 
@@ -83,7 +85,7 @@ def find_best_breakpoint(counts: np.ndarray) -> tuple[int, float, float]:
             best_intercept = lin_reg_result.intercept
 
     if best_b == -1:
-        print("Warning: Could not determine a stable breakpoint. Using default values.")
+        warnings.warn("Could not determine a stable breakpoint.", stacklevel=2)
         return None, None, None
 
     return best_b, best_alpha, best_intercept
@@ -110,7 +112,7 @@ def estimate_library_size(
 
     Returns:
         dict: A dictionary containing the results:
-              'E_KN' (float): The final estimated E[K_N].
+              'library_size' (int): The final estimated E[K_N].
               'B' (int): The estimated breakpoint.
               'alpha' (float): The estimated power-law exponent.
               'E_head' (float): The contribution to E[K_N] from the head.
@@ -187,10 +189,12 @@ def estimate_library_size(
         # Use integral approximation for the sum
         if alpha != 1.0:
             remaining_power_law_sum = (G**(1.0 - alpha) - far_tail_start**(1.0 - alpha)) / (1.0 - alpha)
-            E_tail += N * C * remaining_power_law_sum
         else: # Handle alpha = 1 case
             remaining_power_law_sum = np.log(G) - np.log(far_tail_start)
-            E_tail += N * C * remaining_power_law_sum
+        # Each genotype contributes 1-(1-p)^N, which is at most 1, so the N*p approximation
+        # must not be allowed to claim more distinct genotypes than the far tail contains.
+        n_far_tail = G - far_tail_start + 1
+        E_tail += min(N * C * remaining_power_law_sum, float(n_far_tail))
 
     E_KN = E_head + E_tail
     
@@ -253,5 +257,4 @@ def plot_distribution(counts: np.ndarray, results: dict):
     plt.legend()
     plt.grid(True, which="both", ls="--", linewidth=0.5)
     plt.tight_layout()
-    print("\nDisplaying plot...")
     plt.show()
