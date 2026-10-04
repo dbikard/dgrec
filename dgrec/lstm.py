@@ -436,12 +436,60 @@ def predict_protein_diversity(
     return Counter(proteins)
 
 
+# %% ../nbs/API/09_lstm.ipynb #5ed2963a
+def _teacher_forced_loglik(TR_batch, VR_batch):
+    """Log-likelihood of each VR given its TR, by teacher forcing.
+
+    The decoder is a single-step model: given one position, the previous
+    (TR, VR) pair and the LSTM state, it returns the distribution for that
+    position only. Feeding it the whole sequence at once returns just the last
+    position, which is what `generate_sequence_from_onehot` works around by
+    stepping. The likelihood has to be computed the same way: step through the
+    sequence, read off the probability of the base the VR actually carries, and
+    carry the state forward.
+    """
+    assert all(len(tr) == len(vr) for tr, vr in zip(TR_batch, VR_batch)), "Mismatched lengths"
+    assert len({len(tr) for tr in TR_batch}) <= 1, "All sequences in a batch must share a length"
+    if not TR_batch: return np.array([])
+
+    firstmodel, secondmodel = _get_models()
+    vocab_size, lstm_units = 4, 16
+    n, seq_length = len(TR_batch), len(TR_batch[0])
+
+    # one-hot of the reversed TR, plus the positional index
+    X = np.array([
+        np.concatenate((one_hot_encode(tr[::-1]), [[i] for i in range(seq_length)]), axis=1)
+        for tr in TR_batch
+    ])
+    Y = np.array([one_hot_encode(vr[::-1]) for vr in VR_batch])
+
+    inter_softmax_out, inter_relu_out = firstmodel.predict(X, verbose=0)
+    h = np.zeros((n, lstm_units))
+    c = np.zeros((n, lstm_units))
+    X_mut = np.zeros((n, 1, 2 * vocab_size + 1))
+    X_mut[:, 0, -1] = 1  # start token
+
+    log_likelihoods = np.zeros(n)
+    for t in range(seq_length):
+        output, h, c = secondmodel.predict(
+            [X[:, t:t+1, :], X_mut,
+             inter_softmax_out[:, t:t+1, :], inter_relu_out[:, t:t+1, :], h, c],
+            verbose=0)
+        probs = output[:, 0, :]
+        idx = Y[:, t, :].argmax(axis=1)
+        log_likelihoods += np.log(probs[np.arange(n), idx] + 1e-8)
+        if t < seq_length - 1:
+            X_mut[:, 0, :vocab_size] = X[:, t, :vocab_size]            # the TR base
+            X_mut[:, 0, vocab_size:2*vocab_size] = Y[:, t, :]          # the VR base actually seen
+            X_mut[:, 0, -1] = 0
+    return log_likelihoods
+
 # %% ../nbs/API/09_lstm.ipynb #265d2712-2bfa-482d-8c19-420b904a0350
 def compute_likelihood(TR, VR):
     """
     Compute the log-likelihood of generating a variant sequence (VR)
     given a template/reference sequence (TR).
-    
+
     Parameters
     ----------
     TR : str
@@ -455,60 +503,7 @@ def compute_likelihood(TR, VR):
         Log-likelihood of VR given TR.
     """
     assert len(TR) == len(VR), "Mismatched lengths"
-
-    firstmodel, secondmodel = _get_models()
-
-    vocab_size = 4
-    lstm_units = 16
-    seq_length = len(TR)
-
-    # Encode and reverse sequences.
-    # X includes one-hot encoding of TR plus positional indices.
-    X = np.array([
-        np.concatenate(
-            (one_hot_encode(TR[::-1]), [[i] for i in range(len(TR))]),
-            axis=1
-        )
-    ])
-
-    # One-hot encode reversed VR (target sequence)
-    Y = np.array([one_hot_encode(VR[::-1])])
-
-    # Run first model to obtain intermediate representations
-    inter_softmax_out, inter_relu_out = firstmodel.predict(X, verbose=0)
-
-    # Initialize mutation model input tensor
-    # Shape: (batch, sequence length, 2*vocab_size + 1)
-    X_mut = np.zeros((1, seq_length, 2 * vocab_size + 1))
-
-    # Set start token for first timestep
-    X_mut[:, 0, -1] = 1
-
-    # Populate mutation input using previous TR and VR tokens
-    for t in range(1, seq_length):
-        X_mut[:, t, :vocab_size] = X[:, t - 1, :vocab_size]
-        X_mut[:, t, vocab_size:2 * vocab_size] = Y[:, t - 1, :]
-
-    # Initialize LSTM hidden and cell states
-    initial_h = np.zeros((1, lstm_units))
-    initial_c = np.zeros((1, lstm_units))
-
-    # Run second model for full sequence prediction
-    outputs, _, _ = secondmodel.predict(
-        [X, X_mut, inter_softmax_out, inter_relu_out, initial_h, initial_c],
-        verbose=0
-    )
-
-    # Compute total log-likelihood over sequence
-    log_likelihoods = []
-    for b in range(1):
-        log_prob = 0.0
-        for t in range(seq_length):
-            prob = outputs[b, t, np.argmax(Y[b, t])]
-            log_prob += np.log(prob + 1e-8)
-        log_likelihoods.append(log_prob)
-
-    return log_likelihoods[0]
+    return float(_teacher_forced_loglik([TR], [VR])[0])
 
 # %% ../nbs/API/09_lstm.ipynb #4f2e37b5-bee4-4b0a-b053-c032307a047e
 def compute_likelihood_batch(TR_batch, VR_batch):
@@ -531,66 +526,12 @@ def compute_likelihood_batch(TR_batch, VR_batch):
     list of float
         Log-likelihoods for each (TR, VR) pair.
     """
-    assert all(len(tr) == len(vr) for tr, vr in zip(TR_batch, VR_batch)), "Mismatched lengths"
-
-    firstmodel, secondmodel = _get_models()
-
-    vocab_size = 4
-    lstm_units = 16
-    batch_size = len(TR_batch)
-    seq_length = max ([len(tr) for tr in TR_batch])
-
-    # Encode and reverse TR sequences with positional indices
-    X = np.array([
-        np.concatenate(
-            (one_hot_encode(TR_batch[k][::-1]), [[i] for i in range(len(TR_batch[k]))]),
-            axis=1
-        )
-        for k in range(len(TR_batch))
-    ])
-
-    # Encode and reverse VR sequences
-    Y = np.array([one_hot_encode(vr[::-1]) for vr in VR_batch])
-
-    # First model forward pass
-    inter_softmax_out, inter_relu_out = firstmodel.predict(X, verbose=0)
-
-    # Initialize mutation input tensor
-    X_mut = np.zeros((batch_size, seq_length, 2 * vocab_size + 1))
-
-    # Start tokens at first timestep
-    X_mut[:, 0, -1] = 1
-
-    # Fill mutation inputs using previous TR and VR tokens
-    for t in range(1, seq_length):
-        X_mut[:, t, :vocab_size] = X[:, t - 1, :vocab_size]
-        X_mut[:, t, vocab_size:2 * vocab_size] = Y[:, t - 1, :]
-
-    # Initialize LSTM states for entire batch
-    initial_h = np.zeros((batch_size, lstm_units))
-    initial_c = np.zeros((batch_size, lstm_units))
-
-    # Run second model
-    outputs, _, _ = secondmodel.predict(
-        [X, X_mut, inter_softmax_out, inter_relu_out, initial_h, initial_c],
-        verbose=0
-    )
-
-    # Accumulate log-likelihoods per sequence
-    log_likelihoods = []
-    for b in range(batch_size):
-        log_prob = 0.0
-        for t in range(seq_length):
-            prob = outputs[b, t, np.argmax(Y[b, t])]
-            log_prob += np.log(prob + 1e-100)
-        log_likelihoods.append(log_prob)
-
-    return log_likelihoods
+    return [float(x) for x in _teacher_forced_loglik(list(TR_batch), list(VR_batch))]
 
 # %% ../nbs/API/09_lstm.ipynb #c2bc5a52-813b-4d64-8c3b-21b5d5e01ce9
 def compute_likelihood_list(TR_list, VR_list):
     """
-    Compute log-likelihoods for (TR, VR) pairs.
+    Compute log-likelihoods for (TR, VR) pairs, of any mix of lengths.
 
     Parameters
     ----------
@@ -608,38 +549,17 @@ def compute_likelihood_list(TR_list, VR_list):
     assert all(len(tr) == len(vr) for tr, vr in zip(TR_list, VR_list)), \
         "Mismatched TR/VR lengths"
 
-    # --- group indices by sequence length ---
-    length_to_indices = {}
-    for i, tr in enumerate(TR_list):
-        L = len(tr)
-        length_to_indices.setdefault(L, []).append(i)
+    by_length = {}
+    for i, tr in enumerate(TR_list): by_length.setdefault(len(tr), []).append(i)
 
-    # output container
-    log_likelihoods = [None] * len(TR_list)
-
-    # --- process each length group ---
-    for L, indices in length_to_indices.items():
-        TR_batch = [TR_list[i] for i in indices]
-        VR_batch = [VR_list[i] for i in indices]
-
-        batch_lls = compute_likelihood_batch(
-            TR_batch,
-            VR_batch
-        )
-
-        # restore original order
-        for idx, ll in zip(indices, batch_lls):
-            log_likelihoods[idx] = ll
-
-    return log_likelihoods
-
+    out = [None] * len(TR_list)
+    for _, idxs in by_length.items():
+        lls = _teacher_forced_loglik([TR_list[i] for i in idxs], [VR_list[i] for i in idxs])
+        for i, ll in zip(idxs, lls): out[i] = float(ll)
+    return out
 
 # %% ../nbs/API/09_lstm.ipynb #48e675a6-4402-43cf-88b3-a78bee57ac3f
-def compute_likelihood_matrix(
-    TR_list,
-    VR_list,
-    batch_size=64
-):
+def compute_likelihood_matrix(TR_list, VR_list, batch_size=64):
     """
     Compute a matrix of log-likelihoods where each entry (i, j)
     corresponds to the log-likelihood of generating VR_list[j]
@@ -654,41 +574,17 @@ def compute_likelihood_matrix(
     VR_list : list of str
         List of variant sequences.
     batch_size : int
-        (Currently unused) Intended batch size for future optimization.
+        Unused; kept for backwards compatibility.
 
     Returns
     -------
     list of list of float
-        Log-likelihood matrix of shape (len(TR_list), len(VR_list)).
+        Matrix of log-likelihoods, rows indexed by TR and columns by VR.
     """
-    result_matrix = []
-
-    for i in range(len(TR_list)):
-        row = []
-        TR = TR_list[i]
-
-        # Filter VRs matching current TR length
-        valid_VRs = [vr for vr in VR_list if len(vr) == len(TR)]
-
-        if not valid_VRs:
-            # No compatible VRs
-            row = [-np.inf] * len(VR_list)
-        else:
-            # Compute likelihoods for all compatible VRs
-            batch_TRs = [TR] * len(valid_VRs)
-            log_likelihoods = compute_likelihood_batch(
-                batch_TRs,
-                valid_VRs
-            )
-
-            idx = 0
-            for vr in VR_list:
-                if len(vr) != len(TR):
-                    row.append(-np.inf)
-                else:
-                    row.append(log_likelihoods[idx])
-                    idx += 1
-
-        result_matrix.append(row)
-
-    return result_matrix
+    matrix = [[float("-inf")] * len(VR_list) for _ in TR_list]
+    for i, tr in enumerate(TR_list):
+        cols = [j for j, vr in enumerate(VR_list) if len(vr) == len(tr)]
+        if not cols: continue
+        lls = _teacher_forced_loglik([tr] * len(cols), [VR_list[j] for j in cols])
+        for j, ll in zip(cols, lls): matrix[i][j] = float(ll)
+    return matrix

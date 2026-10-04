@@ -5,3 +5,29 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps: [uses: fastai/workflows/nbdev3-ci@master]
+
+  # The lstm extra is optional, so the job above never imports TensorFlow and every cell
+  # that uses it is skipped. That is how a Keras upgrade was able to change the decoder's
+  # output shape and break compute_likelihood without any test noticing. This job installs
+  # TensorFlow so that code path is actually exercised.
+  test-lstm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install with TensorFlow
+        # tensorflow-cpu rather than the `lstm` extra: that extra pulls tensorflow[and-cuda],
+        # whose CUDA wheels do not fit on a standard runner and are useless without a GPU.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tensorflow-cpu nbdev
+          python -m pip install -e .
+      - name: Check TensorFlow is actually present
+        run: python -c "import tensorflow, dgrec.lstm; print(tensorflow.__version__)"
+      - name: Run the LSTM notebook tests
+        # the console scripts are dash-named in this nbdev; `nbdev_test` does not exist.
+        # positional path, because --path is ambiguous with --path-glob / --path-re
+        run: nbdev-test nbs/API/09_lstm.ipynb
