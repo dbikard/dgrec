@@ -42,7 +42,7 @@ def _require_tensorflow():
     if not _TF_AVAILABLE:
         raise ImportError(
             "TensorFlow is required for LSTM-based sequence generation. "
-            "Install it with: pip install dgrec[lstm]"
+            "Install it with: pip install dgrec-tools[lstm]"
         )
 
 # %% ../nbs/API/09_lstm.ipynb #0af10dfc-65cc-4e39-a9a7-56a9b72ad7fa

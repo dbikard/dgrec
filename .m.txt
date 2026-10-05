@@ -1,0 +1,17 @@
+Publish as dgrec-tools; the import name stays dgrec
+
+The name "dgrec" is already registered on PyPI -- archived, zero releases, owned
+by someone else -- so uploading was refused with "The user 'dbikard' isn't
+allowed to upload to project 'dgrec'". The distribution becomes dgrec-tools.
+Only the pip line changes: the package is still imported as dgrec, so no code,
+no API and no notebook changes beyond the install instructions.
+
+[tool.nbdev] now pins lib_name and lib_path to "dgrec". nbdev derives lib_path
+from the project name when it is not set there, so renaming the distribution
+made nbdev-export write a complete new dgrec_tools/ tree and leave dgrec/ stale
+without reporting anything. That trap is documented in CLAUDE.md.
+
+The docs title stays "dgrec" rather than following the distribution: the site
+lives at /dgrec, the manuscript links to it, and dgrec is what users import.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>

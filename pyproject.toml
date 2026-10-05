@@ -3,7 +3,7 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dgrec"
+name = "dgrec-tools"
 dynamic = ["version"]
 description = "Analyse and design DGRec targeted-hypermutagenesis experiments"
 readme = "README.md"
@@ -49,5 +49,11 @@ include = ["dgrec", "dgrec.*"]
 # config file), NOT from settings.ini - keys left out here fall back to nbdev defaults.
 branch = "master"
 min_python = "3.10"
+# The PyPI distribution is `dgrec-tools` (the name `dgrec` was already taken), but the
+# importable package stays `dgrec`. nbdev derives lib_path from the project name when it is
+# not set here, so without these two lines `nbdev-export` writes into a new `dgrec_tools/`
+# and silently leaves `dgrec/` stale.
+lib_name = "dgrec"
+lib_path = "dgrec"
 jupyter_hooks = true
 custom_sidebar = false

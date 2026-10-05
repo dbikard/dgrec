@@ -12,7 +12,7 @@ DGRec is an in vivo hypermutation technique that combines two biological systems
 
 This creates a powerful tool for targeted in vivo diversification in *E. coli*, where adenine positions within the TR are selectively mutagenized while other bases remain largely unchanged.
 
-The [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) package provides tools to:
+The `dgrec` package provides tools to:
 
 - **Design TR sequences**: score a candidate TR from the predicted folding of its dgrRNA, and recode a poorly mutagenic one using codon substitutions that leave the protein encoded by the target gene unchanged
 - **Predict the diversity a TR will generate**: an LSTM model of the position- and context-dependent error profile of the reverse transcriptase, used to simulate the VR sequences reachable from a given TR
@@ -27,10 +27,12 @@ The [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) package provid
 
 ## Install
 
-[`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) requires **Python 3.10 to 3.13** and installs with pip:
+`dgrec` requires **Python 3.10 to 3.13** and installs with pip. The distribution is
+named `dgrec-tools` because `dgrec` was already taken on PyPI; the import name is
+still `dgrec`:
 
 ``` sh
-pip install dgrec
+pip install dgrec-tools
 ```
 
 All dependencies, including ViennaRNA, are installed automatically — no conda environment is needed.
@@ -38,12 +40,12 @@ All dependencies, including ViennaRNA, are installed automatically — no conda 
 The LSTM model needs TensorFlow, which is an optional extra because it is large:
 
 ``` sh
-pip install "dgrec[lstm]"
+pip install "dgrec-tools[lstm]"
 ```
 
 ## Quick start
 
-[`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec) is used at two points in a DGRec experiment: beforehand, to choose a template region
+`dgrec` is used at two points in a DGRec experiment: beforehand, to choose a template region
 that will actually be mutagenized, and afterwards, to measure what the experiment produced.
 The package ships with a small example dataset, so the code below runs as written.
 
@@ -102,7 +104,7 @@ TR recoding, and the LSTM model of the mutational profile. Every function is doc
 
 ## Citation
 
-If you use [`dgrec`](https://dbikard.github.io/dgrec/API/cli.html#dgrec), please cite:
+If you use `dgrec`, please cite:
 
 > Rochette P, Lopez-Rodriguez E, Wen DJ, Régnier L, *et al.* Diversity-generating retroelements for programmable targeted hypermutagenesis. *Nature Biotechnology* (2026). doi:[10.1038/s41587-026-03078-4](https://doi.org/10.1038/s41587-026-03078-4)
 

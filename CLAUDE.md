@@ -149,6 +149,13 @@ Mutations are comma-separated: `A50T,G75C,T150A` where format is `[RefBase][Posi
 range: setuptools overrides the values in `setup.py`/`settings.ini` with it, so editing
 `settings.ini` requirements alone has no effect. Keep the two in sync if you change either.
 
+**The PyPI distribution is `dgrec-tools`; the importable package is `dgrec`.** The name
+`dgrec` was already registered on PyPI (archived, no releases), so `pip install dgrec-tools`
+installs a package you then `import dgrec`. `[tool.nbdev]` pins `lib_name`/`lib_path` to
+`dgrec` for this reason: nbdev derives `lib_path` from the project name when it is not set
+there, and with `name = "dgrec-tools"` and no pin, `nbdev-export` writes a whole new
+`dgrec_tools/` tree and leaves `dgrec/` stale without saying so. Do not remove those lines.
+
 - Supported Python: **3.10-3.13** (`scikit-learn==1.7.1` requires >=3.10)
 - **scikit-learn==1.7.1** is pinned for model compatibility
 - **ViennaRNA** is a runtime dependency: `dgrec/__init__.py` imports `predictions` and
