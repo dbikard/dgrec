@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Designing a template region, calling genotypes from sequencing data, and visualizing mutation profiles.">
+
+<title>How to use – dgrec-tools</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-f2788e636de456f6409e966386820849.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="How to use – dgrec-tools">
+<meta property="og:description" content="Designing a template region, calling genotypes from sequencing data, and visualizing mutation profiles.">
+<meta property="og:image" content="https://dbikard.github.io/dgrec/how_to_files/figure-html/cell-10-output-1.png">
+<meta property="og:site_name" content="dgrec-tools">
+<meta property="og:image:height" content="899">
+<meta property="og:image:width" content="3234">
+<meta name="twitter:title" content="How to use – dgrec-tools">
+<meta name="twitter:description" content="Designing a template region, calling genotypes from sequencing data, and visualizing mutation profiles.">
+<meta name="twitter:image" content="https://dbikard.github.io/dgrec/how_to_files/figure-html/cell-10-output-1.png">
+<meta name="twitter:image-height" content="899">
+<meta name="twitter:image-width" content="3234">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">dgrec-tools</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/dbikard/dgrec"> <i class="bi bi-github" role="img" aria-label="Source code on GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./how_to.html">How to use</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dgrec</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./how_to.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">How to use</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">API</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/genotypes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">genotypes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/genotypes_paired.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">genotypes_paired</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/plotting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">plotting</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/analysis.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">analysis</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/encoding.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">encoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/predictions.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">predictions</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/utils.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">utils</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/cli.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cli</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/lstm.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">lstm</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./API/library_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">library_size</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">DGRec data analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./DGRec data analysis/library_size_estimation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Library size estimation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#before-the-experiment-designing-a-tr" id="toc-before-the-experiment-designing-a-tr" class="nav-link active" data-scroll-target="#before-the-experiment-designing-a-tr">Before the experiment: designing a TR</a>
+  <ul class="collapse">
+  <li><a href="#directing-diversification-to-chosen-positions" id="toc-directing-diversification-to-chosen-positions" class="nav-link" data-scroll-target="#directing-diversification-to-chosen-positions">Directing diversification to chosen positions</a></li>
+  </ul></li>
+  <li><a href="#after-the-experiment-calling-genotypes" id="toc-after-the-experiment-calling-genotypes" class="nav-link" data-scroll-target="#after-the-experiment-calling-genotypes">After the experiment: calling genotypes</a>
+  <ul class="collapse">
+  <li><a href="#from-the-command-line" id="toc-from-the-command-line" class="nav-link" data-scroll-target="#from-the-command-line">From the command line</a></li>
+  <li><a href="#in-python" id="toc-in-python" class="nav-link" data-scroll-target="#in-python">In Python</a></li>
+  </ul></li>
+  <li><a href="#visualizing-mutation-profiles" id="toc-visualizing-mutation-profiles" class="nav-link" data-scroll-target="#visualizing-mutation-profiles">Visualizing mutation profiles</a></li>
+  <li><a href="#where-to-go-next" id="toc-where-to-go-next" class="nav-link" data-scroll-target="#where-to-go-next">Where to go next</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/dbikard/dgrec/blob/master/how_to.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/dbikard/dgrec/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">How to use</h1>
+</div>
+
+<div>
+  <div class="description">
+    Designing a template region, calling genotypes from sequencing data, and visualizing mutation profiles.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>A DGRec experiment has two computational halves, and this page follows them in order.</p>
+<p><strong>Before the experiment</strong>, you choose a template region (TR) — the part of the dgrRNA that the reverse transcriptase copies. Most sequences make poor TRs, so it is worth scoring a candidate, and recoding it if necessary, before building anything.</p>
+<p><strong>After the experiment</strong>, you sequence the variable region (VR) amplicon and measure what the mutagenesis actually produced: which genotypes appeared, and where along the sequence the mutations fell.</p>
+<p>Everything below runs as written: the package ships with a small example dataset.</p>
+<section id="before-the-experiment-designing-a-tr" class="level2">
+<h2 class="anchored" data-anchor-id="before-the-experiment-designing-a-tr">Before the experiment: designing a TR</h2>
+<p>The TR is a segment of the dgrRNA, a small non-coding RNA, and it is the part the reverse transcriptase copies into the mutagenic cDNA. Not every sequence works: whether the RT can read the dgrRNA depends on how that RNA folds, and a TR that folds badly is simply not mutagenized. <code>tr_score</code> predicts this from the folding energy, on a scale from 0 (poor) to 1 (good).</p>
+<div id="9d658282" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> dgrec</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="24c9f741" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>TR_bad  <span class="op">=</span> <span class="st">'TTAGCGAATGGCGAAATTCGTAAACGCCCTCTGATCGAAACCAACGGCGAAACGGGTGAGATCGTGTGGG'</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>TR_good <span class="op">=</span> <span class="st">'AAATGATCGCCAAATCTGAACAGGAAATTGGCAAAGCAACCGCTAAATACTTTTTCTACTCAAACATTAT'</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'bad TR  score ='</span>, dgrec.tr_score(TR_bad))</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">'good TR score ='</span>, dgrec.tr_score(TR_good))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>bad TR  score = 0.23
+good TR score = 0.84</code></pre>
+</div>
+</div>
+<p>A TR that scores poorly can often be rescued by changing a few of its bases. Two things shape the choice.</p>
+<p>The first is the protein. The TR is read in the reading frame of the gene that carries the VR, and that protein has to survive the diversification, so the substitutions are chosen to be synonymous for it.</p>
+<p>The second is homology. The cDNA recombines with the VR because the two are alike, so changing the TR alone makes them less alike. This is allowed — nothing forbids recoding the TR on its own — but it is a trade: a recoded TR is reverse-transcribed more efficiently while recombining less efficiently, and the two effects can cancel, leaving the overall mutagenesis no better than before. Introducing the same substitutions into the VR keeps the pair matched and avoids the trade altogether.</p>
+<p><code>optimize_sequence</code> searches for substitutions that are synonymous in that reading frame and that improve the predicted folding of the dgrRNA. It returns one row per candidate, ranked, each with the recoded sequence and its two scores.</p>
+<div id="4d804173" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>variants <span class="op">=</span> dgrec.optimize_sequence(TR_bad, N<span class="op">=</span><span class="dv">5</span>, CHANGES<span class="op">=</span><span class="dv">6</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>pd.DataFrame(variants)[[<span class="st">'New_Variant'</span>, <span class="st">'Score_TRSp'</span>, <span class="st">'Score_TRSpAvd'</span>]]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">New_Variant</th>
+<th data-quarto-table-cell-role="th">Score_TRSp</th>
+<th data-quarto-table-cell-role="th">Score_TRSpAvd</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>TTAGCGAACGGCGAAATCCGTAAACGCCCTCTGATCGAAACCAACG...</td>
+<td>0.74</td>
+<td>0.79</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>TTAGCGAATGGCGAAATCCGTAAACGCCCTCTGATCGAAACCAACG...</td>
+<td>0.66</td>
+<td>0.81</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>TTAGCGAATGGTGAAATCCGTAAACGCCCTCTGATCGAAACCAACG...</td>
+<td>0.64</td>
+<td>0.82</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>TTAGCGAACGGTGAAATTCGTAAACGCCCTCTGATCGAAACCAACG...</td>
+<td>0.62</td>
+<td>0.81</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>TTAGCGAATGGCGAAATCCGTAAACGCCCTCTGATCGAAACCAATG...</td>
+<td>0.58</td>
+<td>0.78</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<section id="directing-diversification-to-chosen-positions" class="level3">
+<h3 class="anchored" data-anchor-id="directing-diversification-to-chosen-positions">Directing diversification to chosen positions</h3>
+<p>The reverse transcriptase makes its errors at adenines, so the adenines of the TR are where diversity appears. Which positions diversify is therefore not fixed: it follows from where the adenines are, and you can put them where you want them.</p>
+<p>This is the one case where it is useful <em>not</em> to mirror a change into the VR. Introducing adenines into the TR alone leaves a deliberate mismatch at that codon, which is the point — the cDNA carries the variation into the VR, and the protein is diversified exactly there. The homology cost is the same one as before, but paid deliberately at a few chosen codons rather than spread along the whole sequence.</p>
+<p>The codon to reach for is <strong>AAC</strong> (asparagine). It carries two adenines, and because its third base is a C no combination of adenine substitutions can turn it into a stop codon — so a molecule can reach 15 of the 20 amino acids at that position with no risk of truncating the protein. <code>AAT</code>, the other asparagine codon, is equivalent on both counts. The obvious alternative, the lysine codon <code>AAA</code>, reaches every amino acid but can also become <code>TAA</code>, <code>TAG</code> or <code>TGA</code>, which truncates the protein.</p>
+<p><code>optimize_sequence</code> takes a <code>diversify</code> argument for this, keyed by <strong>codon index</strong> (not nucleotide position, unlike <code>forbidden_positions</code>). Each entry says what should happen at that codon:</p>
+<ul>
+<li><code>'max'</code> or <code>'min'</code> — tune how many amino acids the position can reach, without constraining which ones. <code>'max'</code> is the shortcut for the paragraph above: the optimiser writes <code>AAC</code> into that codon, locks it, and optimises the folding around it. This changes the protein at that position, deliberately, since that is the residue you have chosen to diversify.</li>
+<li><code>['Y', 'F']</code> — the codon must be able to reach all of these amino acids.</li>
+<li><code>('min', ['K', 'R'])</code> — both: reach these, and among the codons that can, take the one that brings along the fewest others. Use this to open a position towards a particular chemistry without letting the rest of the amino acid space in.</li>
+</ul>
+<div id="560e1f40" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dgrec.utils <span class="im">import</span> CODON_TO_AA</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#codon 7 of TR_bad is AAA (lysine): it diversifies widely, but can also be truncated</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>best <span class="op">=</span> dgrec.optimize_sequence(TR_bad, diversify<span class="op">=</span>{<span class="dv">7</span>: <span class="st">'max'</span>}, CHANGES<span class="op">=</span><span class="dv">4</span>, N<span class="op">=</span><span class="dv">1</span>)[<span class="dv">0</span>]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>before, after <span class="op">=</span> TR_bad[<span class="dv">21</span>:<span class="dv">24</span>], best[<span class="st">'New_Variant'</span>][<span class="dv">21</span>:<span class="dv">24</span>]</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"codon 7: </span><span class="sc">{</span>before<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>CODON_TO_AA[before]<span class="sc">}</span><span class="ss">) -&gt; </span><span class="sc">{</span>after<span class="sc">}</span><span class="ss"> (</span><span class="sc">{</span>CODON_TO_AA[after]<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"folding scores: </span><span class="sc">{</span>best[<span class="st">'Score_TRSp'</span>]<span class="sc">}</span><span class="ss"> / </span><span class="sc">{</span>best[<span class="st">'Score_TRSpAvd'</span>]<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>codon 7: AAA (K) -&gt; AAC (N)
+folding scores: 0.74 / 0.78</code></pre>
+</div>
+</div>
+<p>To see what each candidate TR would actually produce, pass it to <a href="https://dbikard.github.io/dgrec/API/lstm.html#predict_protein_diversity"><code>dgrec.lstm.predict_protein_diversity</code></a>, which generates VR sequences with the LSTM model, translates them, and returns the amino acid frequencies at each position (<code>plot=True</code> draws them as a sequence logo). It needs the <code>lstm</code> extra:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> dgrec.lstm <span class="im">import</span> predict_protein_diversity</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> v <span class="kw">in</span> variants:</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    v[<span class="st">'Proteins'</span>] <span class="op">=</span> predict_protein_diversity(v[<span class="st">'New_Variant'</span>], plot<span class="op">=</span><span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>optimize_sequence</code> is documented in full in the <a href="API/predictions.html">predictions API</a>.</p>
+</section>
+</section>
+<section id="after-the-experiment-calling-genotypes" class="level2">
+<h2 class="anchored" data-anchor-id="after-the-experiment-calling-genotypes">After the experiment: calling genotypes</h2>
+<p>Genotype calling takes the amplicon reads and a reference sequence, groups the reads by their UMI so that PCR and sequencing errors are averaged out within a molecule, and reports the distinct genotypes it finds. It is available both as a command-line tool and as a Python function; the two do the same work.</p>
+<section id="from-the-command-line" class="level3">
+<h3 class="anchored" data-anchor-id="from-the-command-line">From the command line</h3>
+<section id="single-reads" class="level4">
+<h4 class="anchored" data-anchor-id="single-reads">Single reads</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dgrec</span> genotypes fastq_path reference_path <span class="at">-o</span> genotypes.csv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="a112e972" class="cell" data-filter_stream="BiopythonWarning BiopythonDeprecationWarning warnings.warn">
+<div class="cell-output cell-output-stdout">
+<pre><code>Usage: dgrec genotypes [OPTIONS] FASTQ REF
+
+Options:
+  -u, --umi_size INTEGER          Number of nucleotides at the beginning of
+                                  the read that will be used as the UMI
+  -q, --quality_threshold INTEGER
+                                  threshold value used to filter out reads of
+                                  poor average quality
+  -i, --ignore_pos LIST           list of positions that are ignored in the
+                                  genotype, e.g. [0,1,149,150]
+  --match FLOAT                   match parameter of the aligner
+  --mismatch FLOAT                mismatch parameter of the aligner
+  --gap_open FLOAT                gap_open parameter of the aligner
+  --gap_extend FLOAT              gap_extend parameter of the aligner
+  -r, --reads_per_umi_thr INTEGER
+                                  minimum number of reads required to take a
+                                  UMI into account. Using a number &gt;2 enables
+                                  to perform error correction for UMIs with
+                                  multiple reads
+  -s, --save_umi_data TEXT        path to a csv file to save the details of
+                                  the genotypes reads for each UMI. If None
+                                  the data isn't saved.
+  -o, --output TEXT               output file path
+  --help                          Show this message and exit.</code></pre>
+</div>
+</div>
+</section>
+<section id="paired-reads" class="level4">
+<h4 class="anchored" data-anchor-id="paired-reads">Paired reads</h4>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dgrec</span> genotypes_paired fwd_fastq_path rev_fastq_path reference_path <span class="at">--fwd_span</span> 0 150 <span class="at">--rev_span</span> 30 150 <span class="at">-o</span> genotypes.csv</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div id="6706de09" class="cell" data-filter_stream="BiopythonWarning BiopythonDeprecationWarning warnings.warn">
+<div class="cell-output cell-output-stdout">
+<pre><code>Usage: dgrec genotypes_paired [OPTIONS] FASTQ_FWD FASTQ_REV REF
+
+  Calls dgrec.genotypes_paired.get_genotypes_paired
+
+Options:
+  --fwd_span &lt;INTEGER INTEGER&gt;...
+                                  Span of the reference sequence read in the
+                                  forward orientation format: start end
+                                  [required]
+  --rev_span &lt;INTEGER INTEGER&gt;...
+                                  Span of the reference sequence read in the
+                                  reverse orientation format: start end
+                                  [required]
+  -p, --require_perfect_pair_agreement
+                                  Require perfect pair agreement for genotype
+                                  calling (default: True).                  If
+                                  set to False, the forward sequence will be
+                                  used in case of disagreement.
+  -u1, --umi_size_fwd INTEGER     Number of nucleotides at the beginning of
+                                  the fwd read that will be used as the UMI
+                                  (default: 10)
+  -u2, --umi_size_rev INTEGER     Number of nucleotides at the beginning of
+                                  the rev read that will be used as the UMI
+                                  (default: 0)
+  -q, --quality_threshold INTEGER
+                                  Threshold value used to filter out reads of
+                                  poor average quality (default: 30)
+  -i, --ignore_pos LIST           List of positions that are ignored in the
+                                  genotype (default: [])
+  --match FLOAT                   match parameter of the aligner
+  --mismatch FLOAT                mismatch parameter of the aligner
+  --gap_open FLOAT                gap_open parameter of the aligner
+  --gap_extend FLOAT              gap_extend parameter of the aligner
+  -r, --reads_per_umi_thr INTEGER
+                                  Minimum number of reads required to take a
+                                  UMI into account (default: 0).
+                                  Using a number &gt;2 enables to perform error
+                                  correction for UMIs with multiple reads
+  -s, --save_umi_data TEXT        Path to a csv file to save the details of
+                                  the genotypes reads for each UMI. If None
+                                  the data isn't saved (default: None)
+  -n INTEGER                      Number of reads to use. If None all the
+                                  reads are used (default: None)
+  -o, --output TEXT               Output file path
+  --help                          Show this message and exit.</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="in-python" class="level3">
+<h3 class="anchored" data-anchor-id="in-python">In Python</h3>
+<p>The Python interface gives the genotypes back as a list, which is more convenient when the result feeds into further analysis.</p>
+<p>The package bundles a small example dataset so that everything below can be run as written. <code>dgrec.get_example_data_dir()</code> returns its path; it contains <code>sacB_example.fastq.gz</code> and <code>sacB_ref.fasta</code> used here, a paired-end example, and the trained models.</p>
+<div id="fd25d38b" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">#The package ships with a small example dataset; this is where it lives</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>data_path <span class="op">=</span> dgrec.get_example_data_dir()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Load the reference and call the genotypes. <code>ignore_pos</code> excludes positions at the edges of the amplicon, where sequencing quality is low and spurious mismatches accumulate.</p>
+<div id="5230b99f" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> Bio <span class="im">import</span> SeqIO</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Getting the path to the fastq file</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>fastq_file<span class="op">=</span><span class="st">"sacB_example.fastq.gz"</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>fastq_path<span class="op">=</span>os.path.join(data_path,fastq_file)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="co">#Getting the reference sequence for the amplicon</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>read_ref_file<span class="op">=</span><span class="st">"sacB_ref.fasta"</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>ref<span class="op">=</span><span class="bu">next</span>(SeqIO.parse(os.path.join(data_path,read_ref_file),<span class="st">"fasta"</span>))</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>ref_seq<span class="op">=</span><span class="bu">str</span>(ref.seq)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co">#Genotypes, sorted by the number of UMI-deduplicated molecules supporting each one</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>genotypes <span class="op">=</span> dgrec.get_genotypes(fastq_path, ref_seq, ignore_pos<span class="op">=</span>[<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">138</span>,<span class="dv">139</span>,<span class="dv">140</span>,<span class="dv">141</span>],</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>                                as_dataframe<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>genotypes.head(<span class="dv">10</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>n reads:    1000
+n_reads pass filter:    847
+n_reads aligned:    824
+Number of UMIs: 814
+Median number of reads per UMI: 1.0
+Number of genotypes: 123</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">genotype</th>
+<th data-quarto-table-cell-role="th">count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td></td>
+<td>675</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>C56A</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>A76G</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>A91G</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>A91T</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">5</th>
+<td>C69T</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">6</th>
+<td>T122A</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">7</th>
+<td>A91C</td>
+<td>2</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">8</th>
+<td>A105G</td>
+<td>2</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">9</th>
+<td>C116A</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Each genotype is represented as a comma-separated list of mutations in the format <code>[RefBase][Position][AltBase]</code>. The table is sorted by the number of UMI-deduplicated molecules supporting each genotype. The first entry is typically the wild-type (unmutated) sequence, whose genotype string is empty.</p>
+<p>Without <code>as_dataframe=True</code> the same result comes back as a list of <code>(genotype, count)</code> tuples; both forms are accepted everywhere the package takes a genotype list.</p>
+<p>The counts printed above are a summary of how many reads survived each step. Pass <code>verbose=False</code> to silence them, which is what you want when calling this in a loop over many samples.</p>
+</section>
+</section>
+<section id="visualizing-mutation-profiles" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-mutation-profiles">Visualizing mutation profiles</h2>
+<p>Plot mutation counts at each position. The shaded region indicates the TR range, where DGRec mutagenesis is active. Note the strong enrichment of mutations at adenine positions within the TR — the hallmark DGRec signature (in this example the TR was designed to have an identical sequence to the VR).</p>
+<div id="a3d38dc1" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> dgrec.plot_mutations(genotypes, ref_seq, sample_name<span class="op">=</span><span class="st">"sacB"</span>, TR_range<span class="op">=</span>[<span class="dv">50</span>,<span class="dv">119</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="how_to_files/figure-html/cell-10-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="where-to-go-next" class="level2">
+<h2 class="anchored" data-anchor-id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><a href="API/genotypes.html">API reference</a> — every function, with its arguments and defaults.</li>
+<li><a href="API/lstm.html"><code>dgrec.lstm</code></a> — the LSTM model of the RT error profile, for predicting which variants a TR will generate. It needs the <code>lstm</code> extra.</li>
+<li><a href="DGRec data analysis/library_size_estimation.html">Library size estimation</a> — how many distinct variants a library of a given size is expected to contain.</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/dbikard\.github\.io\/dgrec");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/dbikard/dgrec/blob/master/how_to.ipynb" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/dbikard/dgrec/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
