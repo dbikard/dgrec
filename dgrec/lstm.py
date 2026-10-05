@@ -78,6 +78,32 @@ if _TF_AVAILABLE:
             return tf.identity(inputs)
         def compute_mask(self, inputs, mask=None):
             return None
+
+    class MaskedAccuracy(tf.keras.metrics.Metric):
+        """Masked accuracy as a Metric subclass.
+
+        The model retrained on 2026-02-16 was compiled with this, so its saved config names
+        the class and Keras must be handed it to deserialise. The `masked_accuracy` function
+        above is the earlier form and is kept because models saved with it still load.
+        """
+        def __init__(self, name='masked_accuracy', **kwargs):
+            super().__init__(name=name, **kwargs)
+            self.total = self.add_weight(name='total', initializer='zeros')
+            self.count = self.add_weight(name='count', initializer='zeros')
+
+        def update_state(self, y_true, y_pred, sample_weight=None):
+            mask = tf.cast(tf.reduce_any(tf.not_equal(y_true, 0.0), axis=-1), tf.float32)
+            matches = tf.cast(tf.equal(tf.argmax(y_true, axis=-1),
+                                       tf.argmax(y_pred, axis=-1)), tf.float32)
+            self.total.assign_add(tf.reduce_sum(matches * mask))
+            self.count.assign_add(tf.reduce_sum(mask))
+
+        def result(self):
+            return self.total / tf.maximum(self.count, 1e-8)
+
+        def reset_state(self):
+            self.total.assign(0.0)
+            self.count.assign(0.0)
 else:
     def masked_categorical_crossentropy(y_true, y_pred):
         _require_tensorflow()
@@ -85,6 +111,8 @@ else:
     def masked_accuracy(y_true, y_pred):
         _require_tensorflow()
     def DetachMask(layer):
+        _require_tensorflow()
+    def MaskedAccuracy(*args, **kwargs):
         _require_tensorflow()
 
 def one_hot_encode(sequence, vocab_size=4):
@@ -206,7 +234,8 @@ def _get_models():
             custom_objects={
                 'masked_categorical_crossentropy': masked_categorical_crossentropy,
                 'masked_accuracy': masked_accuracy,
-                'DetachMask': DetachMask  # placeholder for custom DetachMask
+                'DetachMask': DetachMask,  # placeholder for custom DetachMask
+                'MaskedAccuracy': MaskedAccuracy,
             }
         )
         _models_cache['firstmodel'], _models_cache['secondmodel'] = separate_model(model_TR_to_VR)
